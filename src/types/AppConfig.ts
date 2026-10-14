@@ -1,7 +1,8 @@
 export type AppConfig = {
-  anthropicApiKey: string;
   sitniksApiUrl: string;
   sitniksApiKey: string;
-  googleCredentialsPath: string;
-  spreadsheetId: string;
+  scheduleSpreadsheetId: string;
+  telegramBotToken: string;
+  ordersChatId: number;
+  reportChatId: number;
 };

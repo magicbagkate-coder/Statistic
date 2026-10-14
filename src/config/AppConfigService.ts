@@ -13,10 +13,11 @@ function readEnv(name: string): string {
 @Injectable()
 export class AppConfigService {
   readonly config: AppConfig = {
-    anthropicApiKey: readEnv('ANTHROPIC_API_KEY'),
     sitniksApiUrl: readEnv('SITNIKS_API_URL'),
     sitniksApiKey: readEnv('SITNIKS_API_KEY'),
-    googleCredentialsPath: readEnv('GOOGLE_CREDENTIALS_PATH'),
-    spreadsheetId: readEnv('GOOGLE_SPREADSHEET_ID'),
+    scheduleSpreadsheetId: readEnv('SCHEDULE_SPREADSHEET_ID'),
+    telegramBotToken: readEnv('TELEGRAM_BOT_TOKEN'),
+    ordersChatId: Number(readEnv('TELEGRAM_ORDERS_CHAT_ID')),
+    reportChatId: Number(readEnv('TELEGRAM_REPORT_CHAT_ID')),
   };
 }

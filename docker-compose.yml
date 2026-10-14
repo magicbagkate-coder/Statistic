@@ -1,0 +1,11 @@
+services:
+  agent:
+    container_name: magicbag-stats
+    build: .
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file: .env
+    environment:
+      TZ: Europe/Kyiv
+    volumes:
+      - ./data:/app/data

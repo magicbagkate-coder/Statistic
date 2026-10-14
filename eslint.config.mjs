@@ -22,7 +22,7 @@ const restrictedSyntax = [
 ];
 
 export default defineConfig(
-  { ignores: ['dist', 'node_modules'] },
+  { ignores: ['dist', 'node_modules', 'vitest.config.mts'] },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   {

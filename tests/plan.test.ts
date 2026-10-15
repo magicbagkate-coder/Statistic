@@ -108,8 +108,9 @@ describe('formatPlanLines', () => {
   });
 
   it('writes an excess, a met plan and a missing fact', () => {
-    expect(formatPlanLines({ plan: { orders: 20 }, orders: 25 })).toEqual(['План по заказам: 20 · факт: 25 (перевыполнение 5 заказов)']);
+    expect(formatPlanLines({ plan: { orders: 20 }, orders: 25 })).toEqual(['План по заказам: 20 · факт: 25 (план выполнен, перевыполнение 5 заказов)']);
     expect(formatPlanLines({ plan: { orders: 20, conversion: 15 }, orders: 20, conversion: 15 })[1]).toContain('(план выполнен)');
+    expect(formatPlanLines({ plan: { conversion: 15 }, orders: 20, conversion: 17 })[0]).toBe('План по конверсии: 15,0% · факт: 17,0% (план выполнен, перевыполнение 2,0 п.п.)');
     expect(formatPlanLines({ plan: { conversion: 15 }, orders: 0, conversion: undefined })[0]).toContain('факт: — (—)');
   });
 

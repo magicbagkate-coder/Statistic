@@ -4,58 +4,48 @@ import type { LeadCounts } from '@/types/LeadCounts';
 
 import { mergeSecondShift } from '@/leads/mergeSecondShift';
 
-const FIRST_SHIFT: LeadCounts = {
-  leads: 100,
-  target: 40,
-  facebook: 5,
+const BOTH_SHIFTS: LeadCounts = {
+  leads: 80,
+  target: 30,
+  facebook: 6,
   newBot: 20,
   bySource: [
-    { source: 'Инста 1', leads: 10, target: 4 },
-    { source: 'ФБ 1', leads: 90, target: 36 },
-  ],
-};
-
-const BOTH_SHIFTS: LeadCounts = {
-  leads: 180,
-  target: 70,
-  facebook: 9,
-  newBot: 33,
-  bySource: [
-    { source: 'Инста 1', leads: 25, target: 10 },
-    { source: 'ФБ 1', leads: 150, target: 55 },
+    { source: 'Инста 1', leads: 15, target: 6 },
+    { source: 'ФБ 1', leads: 60, target: 22 },
     { source: 'Вайбер', leads: 5, target: 2 },
   ],
 };
 
 const SECOND_DIRECT: LeadCounts = {
-  leads: 90,
-  target: 30,
+  leads: 70,
+  target: 25,
   facebook: 4,
   newBot: 13,
   bySource: [
-    { source: 'Инста 1', leads: 20, target: 8 },
-    { source: 'ФБ 1', leads: 65, target: 20 },
-    { source: 'Вайбер', leads: 5, target: 2 },
+    { source: 'Инста 1', leads: 12, target: 5 },
+    { source: 'ФБ 1', leads: 53, target: 18 },
+    { source: 'Телеграм (Tiktok)', leads: 5, target: 2 },
   ],
 };
 
 describe('mergeSecondShift', () => {
-  const merged = mergeSecondShift({ direct: SECOND_DIRECT, bothShifts: BOTH_SHIFTS, firstShift: FIRST_SHIFT });
+  const merged = mergeSecondShift({ direct: SECOND_DIRECT, bothShifts: BOTH_SHIFTS });
 
-  it('subtracts the first shift from general leads, in total and per source', () => {
+  it('takes general leads from the managers of both shifts, in total and per source', () => {
     expect(merged.leads).toBe(80);
     expect(merged.bySource.find((row) => row.source === 'Инста 1')?.leads).toBe(15);
     expect(merged.bySource.find((row) => row.source === 'Вайбер')?.leads).toBe(5);
   });
 
   it('takes target, Facebook and new bot straight from the second shift managers', () => {
-    expect(merged.target).toBe(30);
+    expect(merged.target).toBe(25);
     expect(merged.facebook).toBe(4);
     expect(merged.newBot).toBe(13);
-    expect(merged.bySource.find((row) => row.source === 'ФБ 1')?.target).toBe(20);
+    expect(merged.bySource.find((row) => row.source === 'ФБ 1')?.target).toBe(18);
   });
 
-  it('sorts sources by general leads, largest first', () => {
-    expect(merged.bySource.map((row) => row.source)).toEqual(['ФБ 1', 'Инста 1', 'Вайбер']);
+  it('keeps a source that only appears in one of the two counts and sorts by general leads', () => {
+    expect(merged.bySource.map((row) => row.source)).toEqual(['ФБ 1', 'Инста 1', 'Вайбер', 'Телеграм (Tiktok)']);
+    expect(merged.bySource.find((row) => row.source === 'Телеграм (Tiktok)')).toEqual({ source: 'Телеграм (Tiktok)', leads: 0, target: 2 });
   });
 });

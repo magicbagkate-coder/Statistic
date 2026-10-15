@@ -37,7 +37,9 @@ export class IntakeJobs {
 
   private async processBatch(batch: OrderBatch): Promise<void> {
     try {
-      await this.delivery.deliver(await this.reports.prepareReport(batch));
+      const report = await this.reports.prepareReport({ batch, now: Date.now() });
+      if (!report) return;
+      await this.delivery.deliver(report);
       this.logger.log(`Report sent for ${batch.date}, shift ${batch.shift}, ${batchOrderIds(batch).length} orders`);
     } catch (error) {
       this.logger.error(`Report failed for ${batch.date}, shift ${batch.shift}: ${describeError(error)}`);

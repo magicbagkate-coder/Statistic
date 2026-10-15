@@ -33,6 +33,11 @@ export function kyivToday(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: KYIV_ZONE }).format(new Date());
 }
 
+/** Returns the calendar date after the given YYYY-MM-DD date. */
+export function kyivDayAfter(date: string): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + DAY_MILLIS).toISOString().slice(0, 10);
+}
+
 /** Returns yesterday's date in Kyiv as YYYY-MM-DD. */
 export function kyivYesterday(): string {
   return new Date(Date.parse(`${kyivToday()}T00:00:00Z`) - DAY_MILLIS).toISOString().slice(0, 10);

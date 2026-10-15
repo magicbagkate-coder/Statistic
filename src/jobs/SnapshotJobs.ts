@@ -19,14 +19,14 @@ export class SnapshotJobs {
     private readonly telegram: TelegramService,
   ) {}
 
-  /** 16:00 Kyiv: the first shift ends. */
-  @Cron('0 16 * * *', { timeZone: KYIV_ZONE })
+  /** 16:15 Kyiv: the first shift window closes, after managers had a few minutes to finish. */
+  @Cron('15 16 * * *', { timeZone: KYIV_ZONE })
   snapshotFirstShift(): Promise<void> {
     return this.takeSnapshot({ date: kyivToday(), shift: 1 });
   }
 
-  /** 00:00 Kyiv: the second shift of the previous day ends. */
-  @Cron('0 0 * * *', { timeZone: KYIV_ZONE })
+  /** 00:30 Kyiv: the second shift window of the previous day closes. */
+  @Cron('30 0 * * *', { timeZone: KYIV_ZONE })
   snapshotSecondShift(): Promise<void> {
     return this.takeSnapshot({ date: kyivYesterday(), shift: 2 });
   }

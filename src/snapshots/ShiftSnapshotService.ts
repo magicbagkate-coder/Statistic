@@ -13,12 +13,11 @@ export class ShiftSnapshotService {
     private readonly store: SnapshotStore,
   ) {}
 
-  /** Counts a shift from Sitniks; when asked, stores the result so the second shift can subtract the first. */
+  /** Counts a shift from Sitniks; when asked, stores the result so the report can use it later. */
   async collectShift(request: { date: string; shift: ShiftNumber; save: boolean }): Promise<LeadCounts> {
     const { date, shift, save } = request;
-    const chats = await this.shiftLeads.fetchDayChats(date);
-    const firstShift = shift === 2 ? await this.store.load(date, 1) : undefined;
-    const counts = await this.shiftLeads.countShift({ chats, date, shift, firstShift });
+    const chats = await this.shiftLeads.fetchShiftChats({ date, shift });
+    const counts = await this.shiftLeads.countShift({ chats, date, shift });
     if (save) await this.store.save({ date, shift, counts });
     return counts;
   }

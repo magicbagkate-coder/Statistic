@@ -17,10 +17,11 @@ export class ReminderJobs {
     await this.remind(() => this.reminders.remindIfMissing({ date: kyivToday(), shift: 1 }));
   }
 
-  /** 01:00 Kyiv: no second shift orders yet. */
+  /** 01:00 Kyiv: no second shift orders and no live stream count yet. */
   @Cron('0 1 * * *', { timeZone: KYIV_ZONE })
   async remindSecondShift(): Promise<void> {
     await this.remind(() => this.reminders.remindIfMissing({ date: kyivYesterday(), shift: 2 }));
+    await this.remind(() => this.reminders.remindLiveIfMissing(kyivYesterday()));
   }
 
   private async remind(action: () => Promise<void>): Promise<void> {

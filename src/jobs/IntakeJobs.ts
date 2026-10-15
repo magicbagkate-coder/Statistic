@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
+import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
 
 import { describeError } from '@/common/describeError';
@@ -27,7 +28,9 @@ export class IntakeJobs {
     if (this.isRunning) return;
     this.isRunning = true;
     try {
-      for (const batch of await this.intake.collectReadyBatches(Date.now())) await this.processBatch(batch);
+      const ready = await this.intake.collectReady(Date.now());
+      for (const batch of ready.batches) await this.processBatch(batch);
+      for (const entry of ready.liveOrders) await this.processLiveOrders(entry);
     } catch (error) {
       this.logger.error(`Order polling failed: ${describeError(error)}`);
     } finally {
@@ -46,5 +49,18 @@ export class IntakeJobs {
       await this.delivery.notifyFailure({ batch, reason: describeError(error) });
     }
     await this.intake.completeBatch(batch);
+  }
+
+  private async processLiveOrders(entry: LiveOrders): Promise<void> {
+    try {
+      const report = await this.reports.prepareDayReport({ entry, now: Date.now() });
+      if (!report) return;
+      await this.delivery.deliverDay(report);
+      this.logger.log(`Day report sent for ${entry.date}, ${entry.count} live stream orders`);
+    } catch (error) {
+      this.logger.error(`Day report failed for ${entry.date}: ${describeError(error)}`);
+      await this.delivery.notifyDayFailure({ date: entry.date, reason: describeError(error) });
+    }
+    await this.intake.completeLiveOrders(entry);
   }
 }

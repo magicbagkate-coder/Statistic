@@ -19,8 +19,8 @@ import {
 
 @Injectable()
 export class LeadsService {
-  /** Counts leads among chats of the given managers plus chats without a manager. */
-  countLeads(chats: Chat[], managerNames: string[]): LeadCounts {
+  /** Counts leads among chats of the given managers plus chats without a manager; without a manager list every chat counts. */
+  countLeads(chats: Chat[], managerNames?: string[]): LeadCounts {
     const shiftChats = chats.filter((chat) => this.isShiftChat(chat, managerNames));
     const leads = shiftChats.filter((chat) => LEAD_STATUSES.has(chat.status));
     const target = leads.filter((chat) => TARGET_STATUSES.has(chat.status));
@@ -44,7 +44,8 @@ export class LeadsService {
     };
   }
 
-  private isShiftChat(chat: Chat, managerNames: string[]): boolean {
+  private isShiftChat(chat: Chat, managerNames?: string[]): boolean {
+    if (!managerNames) return true;
     if (!chat.assignedManagerName) return true;
     return managerNames.includes(chat.assignedManagerName);
   }

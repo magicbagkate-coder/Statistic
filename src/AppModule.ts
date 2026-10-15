@@ -13,6 +13,7 @@ import { ReportDeliveryService } from '@/report/ReportDeliveryService';
 import { ReportService } from '@/report/ReportService';
 import { ScheduleService } from '@/schedule/ScheduleService';
 import { SitniksService } from '@/sitniks/SitniksService';
+import { DaySnapshotService } from '@/snapshots/DaySnapshotService';
 import { ShiftSnapshotService } from '@/snapshots/ShiftSnapshotService';
 import { SnapshotStore } from '@/snapshots/SnapshotStore';
 import { MessageLogStore } from '@/storage/MessageLogStore';
@@ -30,6 +31,7 @@ import { TelegramService } from '@/telegram/TelegramService';
     ShiftLeadsService,
     SnapshotStore,
     ShiftSnapshotService,
+    DaySnapshotService,
     TelegramService,
     StateStore,
     MessageLogStore,

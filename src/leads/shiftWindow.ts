@@ -16,3 +16,8 @@ export function shiftWindow(date: string, shift: ShiftNumber): TimeRange {
   if (shift === 1) return { from: kyivLocalToIso(date, FIRST_SHIFT_START), to: kyivLocalToIso(date, FIRST_SHIFT_END) };
   return { from: kyivLocalToIso(date, FIRST_SHIFT_END), to: kyivLocalToIso(kyivDayAfter(date), SECOND_SHIFT_END) };
 }
+
+/** The whole working day: both shift windows together, from 00:15 to 00:30 of the next day. */
+export function dayWindow(date: string): TimeRange {
+  return { from: kyivLocalToIso(date, FIRST_SHIFT_START), to: kyivLocalToIso(kyivDayAfter(date), SECOND_SHIFT_END) };
+}

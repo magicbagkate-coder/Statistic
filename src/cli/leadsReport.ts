@@ -12,14 +12,13 @@ import type { ShiftNumber } from '@/types/ShiftNumber';
 
 import { CliModule } from '@/cli/CliModule';
 import { kyivToday } from '@/common/kyivTime';
-import { LeadsService } from '@/leads/LeadsService';
-import { ShiftLeadsService } from '@/leads/ShiftLeadsService';
+import { DaySnapshotService } from '@/snapshots/DaySnapshotService';
 import { ShiftSnapshotService } from '@/snapshots/ShiftSnapshotService';
 
 function readShift(text: string): ShiftNumber {
   if (text === '1') return 1;
   if (text === '2') return 2;
-  throw new Error('Use --shift 1, --shift 2 or --service');
+  throw new Error('Use --shift 1, --shift 2 or --day');
 }
 
 function printCounts(label: string, counts: LeadCounts): void {
@@ -28,14 +27,15 @@ function printCounts(label: string, counts: LeadCounts): void {
   for (const row of counts.bySource) stdout.write(`  ${row.source}: leads ${row.leads}, target ${row.target}\n`);
 }
 
-function printService(label: string, counts: ServiceCounts): void {
-  stdout.write(`${label}\n`);
-  stdout.write(`live stream ${counts.liveStream} | returns ${counts.returns} | service requests ${counts.serviceRequests}\n`);
+function printService(counts: ServiceCounts): void {
+  stdout.write(`service manager: live stream ${counts.liveStream} | returns ${counts.returns} | service requests ${counts.serviceRequests}\n`);
 }
 
-async function printServiceReport(app: INestApplicationContext, date: string): Promise<void> {
-  const chats = await app.get(ShiftLeadsService).fetchDayChats(date);
-  printService(`service manager, whole day ${date}`, app.get(LeadsService).countServiceLeads(chats));
+async function printDayReport(app: INestApplicationContext, request: { date: string; save: boolean }): Promise<void> {
+  const { date, save } = request;
+  const counts = await app.get(DaySnapshotService).collectDay({ date, save });
+  printCounts(`whole day, ${date}, no managers chosen${save ? ' (saved)' : ''}`, counts.day);
+  printService(counts.service);
 }
 
 async function printShiftReport(app: INestApplicationContext, request: { date: string; shiftText: string; save: boolean }): Promise<void> {
@@ -48,12 +48,13 @@ async function printShiftReport(app: INestApplicationContext, request: { date: s
 async function runReport(): Promise<void> {
   const { values } = parseArgs({
     args: argv.slice(2),
-    options: { date: { type: 'string' }, shift: { type: 'string' }, service: { type: 'boolean' }, save: { type: 'boolean' } },
+    options: { date: { type: 'string' }, shift: { type: 'string' }, day: { type: 'boolean' }, save: { type: 'boolean' } },
   });
   const date = values.date ?? kyivToday();
+  const save = Boolean(values.save);
   const app = await NestFactory.createApplicationContext(CliModule, { logger: ['error'] });
-  if (values.service) await printServiceReport(app, date);
-  if (!values.service) await printShiftReport(app, { date, shiftText: values.shift ?? '', save: Boolean(values.save) });
+  if (values.day) await printDayReport(app, { date, save });
+  if (!values.day) await printShiftReport(app, { date, shiftText: values.shift ?? '', save });
   await app.close();
 }
 

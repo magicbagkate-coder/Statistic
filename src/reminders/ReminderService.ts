@@ -29,4 +29,14 @@ export class ReminderService {
     );
     await this.stateStore.save({ ...state, reminders: [...state.reminders, key] });
   }
+
+  /** Reminds the service manager once when her live stream order count for the day has not arrived. */
+  async remindLiveIfMissing(date: string): Promise<void> {
+    const key = `${date}-live`;
+    const state = await this.stateStore.load();
+    const hasEntry = state.liveOrders.some((entry) => entry.date === date);
+    if (state.reminders.includes(key) || hasEntry || (await this.reportStore.existsDay(date))) return;
+    await this.telegram.sendToOrdersChat(`${REPORT_TEXTS.reminderLive} ${formatDate(date)}.\n${REPORT_TEXTS.reminderLiveHint}`);
+    await this.stateStore.save({ ...state, reminders: [...state.reminders, key] });
+  }
 }

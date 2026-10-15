@@ -5,12 +5,13 @@ import type { AgentState } from '@/types/AgentState';
 import { readJson, writeJson } from '@/storage/jsonFile';
 
 const STATE_PATH = 'data/state.json';
-const EMPTY_STATE: AgentState = { offset: 0, batches: [], reminders: [] };
+const EMPTY_STATE: AgentState = { offset: 0, batches: [], liveOrders: [], reminders: [] };
 
 @Injectable()
 export class StateStore {
+  /** Loads the saved state; fields added in later versions fall back to empty values. */
   async load(): Promise<AgentState> {
-    return (await readJson<AgentState>(STATE_PATH)) ?? EMPTY_STATE;
+    return { ...EMPTY_STATE, ...(await readJson<Partial<AgentState>>(STATE_PATH)) };
   }
 
   save(state: AgentState): Promise<void> {

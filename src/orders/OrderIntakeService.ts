@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
 import type { AgentState } from '@/types/AgentState';
+import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
+import type { ReadyItems } from '@/types/ReadyItems';
 import type { TelegramMessage } from '@/types/TelegramMessage';
 
 import { kyivToday } from '@/common/kyivTime';
+import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { applyMessage } from '@/orders/applyMessage';
+import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
-import { splitReadyBatches } from '@/orders/splitReadyBatches';
+import { resolveLiveDate } from '@/orders/resolveLiveDate';
+import { QUIET_PERIOD_MS, splitReadyBatches } from '@/orders/splitReadyBatches';
 import { REPORT_TEXTS } from '@/report/reportTexts';
 import { MessageLogStore } from '@/storage/MessageLogStore';
 import { StateStore } from '@/storage/StateStore';
@@ -21,14 +26,17 @@ export class OrderIntakeService {
     private readonly messageLog: MessageLogStore,
   ) {}
 
-  /** Reads the orders group and returns batches that have been quiet long enough to be reported. */
-  async collectReadyBatches(now: number): Promise<OrderBatch[]> {
+  /** Reads the orders group and returns what has been quiet long enough to be reported. */
+  async collectReady(now: number): Promise<ReadyItems> {
     const state = await this.stateStore.load();
     const { messages, nextOffset } = await this.telegram.fetchOrderMessages(state.offset);
     await this.messageLog.append(messages);
     const updated = await this.applyMessages(state, messages);
     await this.stateStore.save({ ...updated, offset: nextOffset });
-    return splitReadyBatches(updated.batches, now).ready;
+    return {
+      batches: splitReadyBatches(updated.batches, now).ready,
+      liveOrders: updated.liveOrders.filter((entry) => now - entry.lastMessageAt >= QUIET_PERIOD_MS),
+    };
   }
 
   /** Removes a reported (or failed) batch so it is not processed again. */
@@ -39,16 +47,30 @@ export class OrderIntakeService {
     await this.stateStore.save({ ...state, batches: state.batches.filter((item) => !isSame(item)) });
   }
 
+  /** Removes a reported (or failed) live stream message so it is not processed again. */
+  async completeLiveOrders(entry: LiveOrders): Promise<void> {
+    const state = await this.stateStore.load();
+    const isSame = (item: LiveOrders): boolean => item.date === entry.date && item.messageId === entry.messageId;
+    await this.stateStore.save({ ...state, liveOrders: state.liveOrders.filter((item) => !isSame(item)) });
+  }
+
   private async applyMessages(state: AgentState, messages: TelegramMessage[]): Promise<AgentState> {
     const year = kyivToday().slice(0, 4);
     let current = state;
-    for (const message of messages) {
-      const parsed = parseOrderMessage(message.text, year);
-      if (parsed.orderIds.length > 0 && !parsed.caption && current.batches.length === 0) {
-        await this.telegram.sendToOrdersChat(REPORT_TEXTS.missingCaption);
-      }
-      current = applyMessage(current, parsed, message);
-    }
+    for (const message of messages) current = await this.applyOne(current, message, year);
     return current;
+  }
+
+  private async applyOne(state: AgentState, message: TelegramMessage, year: string): Promise<AgentState> {
+    const live = parseLiveOrders(message.text, year);
+    if (live) {
+      const date = resolveLiveDate(live.date, message.sentAt);
+      return applyLiveOrders(state, { date, count: live.count, messageId: message.messageId, lastMessageAt: message.sentAt });
+    }
+    const parsed = parseOrderMessage(message.text, year);
+    if (parsed.orderIds.length > 0 && !parsed.caption && state.batches.length === 0) {
+      await this.telegram.sendToOrdersChat(REPORT_TEXTS.missingCaption);
+    }
+    return applyMessage(state, parsed, message);
   }
 }

@@ -1,0 +1,38 @@
+import type { DayCounts } from '@/types/DayCounts';
+import type { DayReport } from '@/types/DayReport';
+import type { LiveOrders } from '@/types/LiveOrders';
+import type { ShiftReport } from '@/types/ShiftReport';
+
+import { buildSourceRows } from '@/report/buildSourceRows';
+import { conversionPercent } from '@/report/conversionPercent';
+
+function sumOrdersBySource(shiftReports: ShiftReport[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const row of shiftReports.flatMap((report) => report.rows)) totals.set(row.source, (totals.get(row.source) ?? 0) + row.orders);
+  return totals;
+}
+
+/**
+ * Whole-day report: leads counted over the whole day without choosing managers, orders = both shifts' orders added up,
+ * plus the service manager's live stream block (live stream conversion = live stream orders / live stream leads,
+ * service requests = returns + service requests).
+ */
+export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[] }): DayReport {
+  const { entry, counts, shiftReports } = input;
+  const { day, service } = counts;
+  const orders = shiftReports.reduce((sum, report) => sum + report.orders, 0);
+  return {
+    date: entry.date,
+    leads: day.leads,
+    target: day.target,
+    facebook: day.facebook,
+    newBot: day.newBot,
+    orders,
+    conversion: conversionPercent(orders, day.target),
+    rows: buildSourceRows(day, sumOrdersBySource(shiftReports)),
+    liveLeads: service.liveStream,
+    liveOrders: entry.count,
+    liveConversion: conversionPercent(entry.count, service.liveStream),
+    serviceRequests: service.returns + service.serviceRequests,
+  };
+}

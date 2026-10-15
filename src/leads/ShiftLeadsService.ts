@@ -4,15 +4,11 @@ import type { Chat } from '@/types/Chat';
 import type { LeadCounts } from '@/types/LeadCounts';
 import type { ShiftNumber } from '@/types/ShiftNumber';
 
-import { kyivLocalToIso } from '@/common/kyivTime';
 import { LeadsService } from '@/leads/LeadsService';
 import { mergeSecondShift } from '@/leads/mergeSecondShift';
 import { shiftWindow } from '@/leads/shiftWindow';
 import { ScheduleService } from '@/schedule/ScheduleService';
 import { SitniksService } from '@/sitniks/SitniksService';
-
-const DAY_START = '00:00:00';
-const DAY_END = '23:59:59';
 
 @Injectable()
 export class ShiftLeadsService {
@@ -21,11 +17,6 @@ export class ShiftLeadsService {
     private readonly schedule: ScheduleService,
     private readonly leads: LeadsService,
   ) {}
-
-  /** Fetches every chat with a message on the Kyiv date (YYYY-MM-DD). */
-  fetchDayChats(date: string): Promise<Chat[]> {
-    return this.sitniks.fetchChats({ from: kyivLocalToIso(date, DAY_START), to: kyivLocalToIso(date, DAY_END) });
-  }
 
   /** Fetches the chats whose last message falls into the shift window. */
   fetchShiftChats(request: { date: string; shift: ShiftNumber }): Promise<Chat[]> {

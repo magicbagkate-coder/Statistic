@@ -15,6 +15,12 @@ describe('parseLiveOrders', () => {
     expect(parseLiveOrders('прямой эфир заказы - 3', '2026')?.count).toBe(3);
   });
 
+  it('reads the agreed way of writing: date, name, live stream, number of orders', () => {
+    expect(parseLiveOrders('15.10, Алина, Прямой эфир - 5 заказов', '2026')).toEqual({ count: 5, date: '2026-10-15' });
+    expect(parseLiveOrders('15.10.26, Алина, прямой эфир - 12 заказов', '2026')).toEqual({ count: 12, date: '2026-10-15' });
+    expect(parseLiveOrders('Алина, Прямой эфир - 1 заказ', '2026')).toEqual({ count: 1, date: undefined });
+  });
+
   it('does not take the date for the count and keeps the written date', () => {
     expect(parseLiveOrders('15.10 заказы прямой эфир 5', '2026')).toEqual({ count: 5, date: '2026-10-15' });
   });

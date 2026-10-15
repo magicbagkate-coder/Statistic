@@ -1,6 +1,7 @@
 import type { DayCounts } from '@/types/DayCounts';
 import type { DayReport } from '@/types/DayReport';
 import type { LiveOrders } from '@/types/LiveOrders';
+import type { PlanValues } from '@/types/PlanValues';
 import type { ShiftReport } from '@/types/ShiftReport';
 
 import { buildSourceRows } from '@/report/buildSourceRows';
@@ -17,8 +18,8 @@ function sumOrdersBySource(shiftReports: ShiftReport[]): Map<string, number> {
  * plus the service manager's live stream block (live stream conversion = live stream orders / live stream leads,
  * service requests = returns + service requests).
  */
-export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[] }): DayReport {
-  const { entry, counts, shiftReports } = input;
+export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[]; plan?: PlanValues }): DayReport {
+  const { entry, counts, shiftReports, plan } = input;
   const { day, service } = counts;
   const orders = shiftReports.reduce((sum, report) => sum + report.orders, 0);
   return {
@@ -29,6 +30,7 @@ export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; sh
     newBot: day.newBot,
     orders,
     conversion: conversionPercent(orders, day.target),
+    plan,
     rows: buildSourceRows(day, sumOrdersBySource(shiftReports)),
     liveLeads: service.liveStream,
     liveOrders: entry.count,

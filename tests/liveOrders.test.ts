@@ -4,9 +4,9 @@ import type { AgentState } from '@/types/AgentState';
 
 import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
-import { resolveLiveDate } from '@/orders/resolveLiveDate';
+import { resolveWorkingDate } from '@/orders/resolveWorkingDate';
 
-const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], reminders: [] };
+const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], plans: [], reminders: [] };
 
 describe('parseLiveOrders', () => {
   it('reads the live stream order count from the way Alina writes it', () => {
@@ -21,6 +21,12 @@ describe('parseLiveOrders', () => {
     expect(parseLiveOrders('Алина, Прямой эфир - 1 заказ', '2026')).toEqual({ count: 1, date: undefined });
   });
 
+  it('ignores the order numbers written in the same message, before or after the count', () => {
+    const listed = '15.10, Алина, Прямой эфир - 5 заказов\n8808297 (19689)\n8809128 (19696)\n8809261';
+    expect(parseLiveOrders(listed, '2026')).toEqual({ count: 5, date: '2026-10-15' });
+    expect(parseLiveOrders('8808297\n8809128 (19696)\n15.10 Алина, прямой эфир - 2 заказа', '2026')?.count).toBe(2);
+  });
+
   it('does not take the date for the count and keeps the written date', () => {
     expect(parseLiveOrders('15.10 заказы прямой эфир 5', '2026')).toEqual({ count: 5, date: '2026-10-15' });
   });
@@ -32,17 +38,17 @@ describe('parseLiveOrders', () => {
   });
 });
 
-describe('resolveLiveDate', () => {
+describe('resolveWorkingDate', () => {
   it('uses the written date when there is one', () => {
-    expect(resolveLiveDate('2026-10-14', Date.parse('2026-10-15T10:00:00Z'))).toBe('2026-10-14');
+    expect(resolveWorkingDate('2026-10-14', Date.parse('2026-10-15T10:00:00Z'))).toBe('2026-10-14');
   });
 
   it('uses the day of sending in Kyiv, and counts a message sent in the small hours for the day before', () => {
-    expect(resolveLiveDate(undefined, Date.parse('2026-10-15T09:00:00Z'))).toBe('2026-10-15');
-    expect(resolveLiveDate(undefined, Date.parse('2026-10-15T21:40:00Z'))).toBe('2026-10-15');
-    expect(resolveLiveDate(undefined, Date.parse('2026-10-15T22:40:00Z'))).toBe('2026-10-15');
-    expect(resolveLiveDate(undefined, Date.parse('2026-10-16T02:30:00Z'))).toBe('2026-10-15');
-    expect(resolveLiveDate(undefined, Date.parse('2026-10-16T03:30:00Z'))).toBe('2026-10-16');
+    expect(resolveWorkingDate(undefined, Date.parse('2026-10-15T09:00:00Z'))).toBe('2026-10-15');
+    expect(resolveWorkingDate(undefined, Date.parse('2026-10-15T21:40:00Z'))).toBe('2026-10-15');
+    expect(resolveWorkingDate(undefined, Date.parse('2026-10-15T22:40:00Z'))).toBe('2026-10-15');
+    expect(resolveWorkingDate(undefined, Date.parse('2026-10-16T02:30:00Z'))).toBe('2026-10-15');
+    expect(resolveWorkingDate(undefined, Date.parse('2026-10-16T03:30:00Z'))).toBe('2026-10-16');
   });
 });
 

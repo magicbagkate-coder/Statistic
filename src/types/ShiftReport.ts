@@ -1,3 +1,4 @@
+import type { PlanValues } from '@/types/PlanValues';
 import type { ReportRow } from '@/types/ReportRow';
 import type { ShiftNumber } from '@/types/ShiftNumber';
 
@@ -11,6 +12,7 @@ export type ShiftReport = {
   newBot: number;
   orders: number;
   conversion?: number;
+  plan?: PlanValues;
   rows: ReportRow[];
   missingOrders: number[];
 };

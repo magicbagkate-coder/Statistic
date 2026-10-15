@@ -1,6 +1,7 @@
 import type { LeadCounts } from '@/types/LeadCounts';
 import type { OrderBatch } from '@/types/OrderBatch';
 import type { OrderInfo } from '@/types/OrderInfo';
+import type { PlanValues } from '@/types/PlanValues';
 import type { ShiftReport } from '@/types/ShiftReport';
 
 import { batchOrderIds } from '@/orders/batchOrderIds';
@@ -18,8 +19,8 @@ function countOrdersBySource(orders: OrderInfo[]): Map<string, number> {
 }
 
 /** Combines the lead snapshot with the orders of the batch: totals, per-source rows and conversion = orders / target leads. */
-export function buildShiftReport(input: { batch: OrderBatch; leads: LeadCounts; orders: OrderInfo[] }): ShiftReport {
-  const { batch, leads, orders } = input;
+export function buildShiftReport(input: { batch: OrderBatch; leads: LeadCounts; orders: OrderInfo[]; plan?: PlanValues }): ShiftReport {
+  const { batch, leads, orders, plan } = input;
   const foundIds = new Set(orders.map((order) => order.id));
   return {
     date: batch.date,
@@ -31,6 +32,7 @@ export function buildShiftReport(input: { batch: OrderBatch; leads: LeadCounts; 
     newBot: leads.newBot,
     orders: orders.length,
     conversion: conversionPercent(orders.length, leads.target),
+    plan,
     rows: buildSourceRows(leads, countOrdersBySource(orders)),
     missingOrders: batchOrderIds(batch).filter((id) => !foundIds.has(id)),
   };

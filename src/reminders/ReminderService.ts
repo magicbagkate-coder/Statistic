@@ -4,6 +4,7 @@ import type { ShiftNumber } from '@/types/ShiftNumber';
 
 import { batchOrderIds } from '@/orders/batchOrderIds';
 import { formatDate } from '@/report/formatReport';
+import { monthName } from '@/report/monthName';
 import { REPORT_TEXTS } from '@/report/reportTexts';
 import { ReportStore } from '@/storage/ReportStore';
 import { StateStore } from '@/storage/StateStore';
@@ -37,6 +38,15 @@ export class ReminderService {
     const hasEntry = state.liveOrders.some((entry) => entry.date === date);
     if (state.reminders.includes(key) || hasEntry || (await this.reportStore.existsDay(date))) return;
     await this.telegram.sendToOrdersChat(`${REPORT_TEXTS.reminderLive} ${formatDate(date)}.\n${REPORT_TEXTS.reminderLiveHint}`);
+    await this.stateStore.save({ ...state, reminders: [...state.reminders, key] });
+  }
+
+  /** On the first day of a month, asks once for the day plan (orders and conversion) of that month. */
+  async remindMonthlyPlan(date: string): Promise<void> {
+    const key = `${date.slice(0, 7)}-plan`;
+    const state = await this.stateStore.load();
+    if (state.reminders.includes(key)) return;
+    await this.telegram.sendToOrdersChat(`${REPORT_TEXTS.planReminder} ${monthName(Number(date.slice(5, 7)))}.`);
     await this.stateStore.save({ ...state, reminders: [...state.reminders, key] });
   }
 }

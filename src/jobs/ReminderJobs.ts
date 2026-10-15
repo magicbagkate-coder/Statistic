@@ -24,6 +24,12 @@ export class ReminderJobs {
     await this.remind(() => this.reminders.remindLiveIfMissing(kyivYesterday()));
   }
 
+  /** 10:00 Kyiv on the first day of every month: ask for the month's day plan. */
+  @Cron('0 10 1 * *', { timeZone: KYIV_ZONE })
+  async remindMonthlyPlan(): Promise<void> {
+    await this.remind(() => this.reminders.remindMonthlyPlan(kyivToday()));
+  }
+
   private async remind(action: () => Promise<void>): Promise<void> {
     try {
       await action();

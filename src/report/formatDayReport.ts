@@ -1,6 +1,7 @@
 import type { DayReport } from '@/types/DayReport';
 
 import { formatPercent } from '@/report/formatPercent';
+import { formatPlanLines } from '@/report/formatPlanLines';
 import { formatDate } from '@/report/formatReport';
 import { formatSourceRow } from '@/report/formatSourceRow';
 import { REPORT_TEXTS } from '@/report/reportTexts';
@@ -12,6 +13,7 @@ export function formatDayReport(report: DayReport): string {
     `${REPORT_TEXTS.leads}: ${report.leads} · ${REPORT_TEXTS.target}: ${report.target}`,
     `${REPORT_TEXTS.facebook}: ${report.facebook} · ${REPORT_TEXTS.newBot}: ${report.newBot}`,
     `${REPORT_TEXTS.orders}: ${report.orders} · ${REPORT_TEXTS.conversion}: ${formatPercent(report.conversion)}`,
+    ...formatPlanLines({ plan: report.plan, orders: report.orders, conversion: report.conversion }),
     '',
     REPORT_TEXTS.bySource,
     ...report.rows.map(formatSourceRow),

@@ -1,3 +1,4 @@
+import type { PlanValues } from '@/types/PlanValues';
 import type { ReportRow } from '@/types/ReportRow';
 
 export type DayReport = {
@@ -8,6 +9,7 @@ export type DayReport = {
   newBot: number;
   orders: number;
   conversion?: number;
+  plan?: PlanValues;
   rows: ReportRow[];
   liveLeads: number;
   liveOrders: number;

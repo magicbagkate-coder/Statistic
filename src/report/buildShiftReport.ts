@@ -5,6 +5,7 @@ import type { ReportRow } from '@/types/ReportRow';
 import type { ShiftReport } from '@/types/ShiftReport';
 import type { SourceCount } from '@/types/SourceCount';
 
+import { batchOrderIds } from '@/orders/batchOrderIds';
 import { findChannelLabel } from '@/orders/findChannelLabel';
 
 const PERCENT = 100;
@@ -51,6 +52,6 @@ export function buildShiftReport(input: { batch: OrderBatch; leads: LeadCounts; 
     orders: orders.length,
     conversion: conversionPercent(orders.length, leads.target),
     rows: buildRows(leads, countOrdersBySource(orders)),
-    missingOrders: batch.orderIds.filter((id) => !foundIds.has(id)),
+    missingOrders: batchOrderIds(batch).filter((id) => !foundIds.has(id)),
   };
 }

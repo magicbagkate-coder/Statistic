@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 function isMissingFile(error: unknown): boolean {
@@ -18,4 +18,11 @@ export async function readJson<Value>(path: string): Promise<Value | undefined> 
 export async function writeJson(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(value, null, 2));
+}
+
+/** Appends one JSON value per line, creating the file when needed. */
+export async function appendJsonLines(path: string, values: unknown[]): Promise<void> {
+  if (values.length === 0) return;
+  await mkdir(dirname(path), { recursive: true });
+  await appendFile(path, values.map((value) => `${JSON.stringify(value)}\n`).join(''));
 }

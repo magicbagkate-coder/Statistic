@@ -17,7 +17,7 @@ const LEADS: LeadCounts = {
   ],
 };
 
-const BATCH = { date: '2026-10-14', shift: 1 as const, leader: 'Наташа', orderIds: [1, 2, 3, 4], lastMessageAt: 0 };
+const BATCH = { date: '2026-10-14', shift: 1 as const, leader: 'Наташа', parts: [{ messageId: 1, orderIds: [1, 2, 3, 4] }], lastMessageAt: 0 };
 
 const ORDERS = [
   { id: 1, channel: 'instagram 1 аккаунт' },

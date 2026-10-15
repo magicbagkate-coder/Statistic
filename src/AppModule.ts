@@ -15,6 +15,7 @@ import { ScheduleService } from '@/schedule/ScheduleService';
 import { SitniksService } from '@/sitniks/SitniksService';
 import { ShiftSnapshotService } from '@/snapshots/ShiftSnapshotService';
 import { SnapshotStore } from '@/snapshots/SnapshotStore';
+import { MessageLogStore } from '@/storage/MessageLogStore';
 import { ReportStore } from '@/storage/ReportStore';
 import { StateStore } from '@/storage/StateStore';
 import { TelegramService } from '@/telegram/TelegramService';
@@ -31,6 +32,7 @@ import { TelegramService } from '@/telegram/TelegramService';
     ShiftSnapshotService,
     TelegramService,
     StateStore,
+    MessageLogStore,
     ReportStore,
     OrderIntakeService,
     ReportService,

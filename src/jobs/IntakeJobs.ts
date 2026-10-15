@@ -4,6 +4,7 @@ import { Interval } from '@nestjs/schedule';
 import type { OrderBatch } from '@/types/OrderBatch';
 
 import { describeError } from '@/common/describeError';
+import { batchOrderIds } from '@/orders/batchOrderIds';
 import { OrderIntakeService } from '@/orders/OrderIntakeService';
 import { ReportDeliveryService } from '@/report/ReportDeliveryService';
 import { ReportService } from '@/report/ReportService';
@@ -37,7 +38,7 @@ export class IntakeJobs {
   private async processBatch(batch: OrderBatch): Promise<void> {
     try {
       await this.delivery.deliver(await this.reports.prepareReport(batch));
-      this.logger.log(`Report sent for ${batch.date}, shift ${batch.shift}, ${batch.orderIds.length} orders`);
+      this.logger.log(`Report sent for ${batch.date}, shift ${batch.shift}, ${batchOrderIds(batch).length} orders`);
     } catch (error) {
       this.logger.error(`Report failed for ${batch.date}, shift ${batch.shift}: ${describeError(error)}`);
       await this.delivery.notifyFailure({ batch, reason: describeError(error) });

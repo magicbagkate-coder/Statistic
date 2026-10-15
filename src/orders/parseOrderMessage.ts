@@ -3,8 +3,9 @@ import type { ParsedMessage } from '@/types/ParsedMessage';
 
 const DATE_PATTERN = /(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/;
 const SHIFT_PATTERN = /смен[аы]?\s*([12])/i;
-const LEADER_PATTERN = /руководител[ьяю]\s+([^\n,]+)/i;
-const ORDER_PATTERN = /^\s*(\d{6,})\s*$/;
+const LEADER_WORD = /руководител[ьяю]/i;
+const ORDER_PATTERN = /^\s*(\d{6,})(?:\s*\(\s*\d+\s*\))?\s*$/;
+const EDGE_PUNCTUATION = /^[\s,.;:()-]+|[\s,.;:()-]+$/g;
 const SHORT_YEAR_LENGTH = 2;
 
 function normalizeYear(rawYear: string | undefined, fallbackYear: string): string {
@@ -12,9 +13,9 @@ function normalizeYear(rawYear: string | undefined, fallbackYear: string): strin
   return rawYear.length === SHORT_YEAR_LENGTH ? `20${rawYear}` : rawYear;
 }
 
+/** The leader is whatever is left of the caption after the date, the shift and the word "руководитель". */
 function readLeader(text: string): string {
-  const match = LEADER_PATTERN.exec(text);
-  return match ? match[1].trim() : '';
+  return text.replace(DATE_PATTERN, ' ').replace(SHIFT_PATTERN, ' ').replace(LEADER_WORD, ' ').replace(EDGE_PUNCTUATION, '').trim();
 }
 
 function readCaption(text: string, fallbackYear: string): OrderCaption | undefined {
@@ -29,7 +30,10 @@ function readCaption(text: string, fallbackYear: string): OrderCaption | undefin
   };
 }
 
-/** Splits a message into an optional caption (date + shift [+ leader]) and the order numbers written one per line. */
+/**
+ * Splits a message into an optional caption (date + shift [+ leader]) and the order numbers, one per line.
+ * A line may carry the short order number in brackets after the internal one, e.g. "8808297 (19689)".
+ */
 export function parseOrderMessage(text: string, fallbackYear: string): ParsedMessage {
   const lines = text.split('\n');
   const orderIds = lines

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { isPlanChatter } from '@/orders/isPlanChatter';
+import { dropStaleBatches, STALE_EMPTY_BATCH_MS } from '@/orders/dropStaleBatches';
+import { isChatter } from '@/orders/isChatter';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
 import { computePlan, PLAN_CONVERSION_PERCENT } from '@/report/computePlan';
 import { formatPlanLines } from '@/report/formatPlanLines';
@@ -61,10 +62,19 @@ describe('pluralOrders', () => {
   });
 });
 
-describe('plan messages in the group', () => {
-  it('are recognised and left out, so a stray plan never opens a shift batch', () => {
-    expect(isPlanChatter('15-10, смена 1, план по конверсии 22%, план по заказам 30')).toBe(true);
-    expect(isPlanChatter('15.10, смена 1, Оля')).toBe(false);
+describe('chatter in the group', () => {
+  it('is recognised and left out: plans and the managers progress updates never open a shift batch', () => {
+    expect(isChatter('15-10, смена 1, план по конверсии 22%, план по заказам 30')).toBe(true);
+    expect(isChatter('1 смена \n15.10 на 12.00\n79\n21.5%\n18 заказов')).toBe(true);
+    expect(isChatter('15.10, смена 1, Оля')).toBe(false);
+    expect(isChatter('Смена 1\n16.10\nНаташа\n\n8848198')).toBe(false);
+  });
+
+  it('forgets a caption without order numbers after twelve hours, but keeps one that has orders', () => {
+    const empty = { date: '2026-10-15', shift: 1 as const, leader: 'Оля', parts: [{ messageId: 1, orderIds: [] }], lastMessageAt: 0 };
+    const full = { ...empty, parts: [{ messageId: 2, orderIds: [8800456] }] };
+    expect(dropStaleBatches([empty, full], STALE_EMPTY_BATCH_MS - 1)).toEqual([empty, full]);
+    expect(dropStaleBatches([empty, full], STALE_EMPTY_BATCH_MS)).toEqual([full]);
   });
 });
 

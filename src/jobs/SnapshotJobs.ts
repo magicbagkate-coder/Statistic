@@ -21,8 +21,8 @@ export class SnapshotJobs {
     private readonly telegram: TelegramService,
   ) {}
 
-  /** 16:15 Kyiv: the first shift window closes, after managers had a few minutes to finish. */
-  @Cron('15 16 * * *', { timeZone: KYIV_ZONE })
+  /** 16:00 Kyiv: the first shift ends and its window closes. */
+  @Cron('0 16 * * *', { timeZone: KYIV_ZONE })
   snapshotFirstShift(): Promise<void> {
     return this.takeShiftSnapshot({ date: kyivToday(), shift: 1 });
   }

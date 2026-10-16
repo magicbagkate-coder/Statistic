@@ -10,7 +10,8 @@ import type { TelegramMessage } from '@/types/TelegramMessage';
 import { kyivToday } from '@/common/kyivTime';
 import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { applyMessage } from '@/orders/applyMessage';
-import { isPlanChatter } from '@/orders/isPlanChatter';
+import { dropStaleBatches } from '@/orders/dropStaleBatches';
+import { isChatter } from '@/orders/isChatter';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
 import { resolveWorkingDate } from '@/orders/resolveWorkingDate';
@@ -34,9 +35,10 @@ export class OrderIntakeService {
     const { messages, nextOffset } = await this.telegram.fetchOrderMessages(state.offset);
     await this.messageLog.append(messages);
     const updated = await this.applyMessages(state, messages);
-    await this.stateStore.save({ ...updated, offset: nextOffset });
+    const batches = dropStaleBatches(updated.batches, now);
+    await this.stateStore.save({ ...updated, batches, offset: nextOffset });
     return {
-      batches: splitReadyBatches(updated.batches, now).ready,
+      batches: splitReadyBatches(batches, now).ready,
       liveOrders: updated.liveOrders.filter((entry) => now - entry.lastMessageAt >= QUIET_PERIOD_MS),
     };
   }
@@ -63,11 +65,11 @@ export class OrderIntakeService {
     return current;
   }
 
-  /** A message is a live stream count, talk about a plan (ignored), or (otherwise) a shift caption and order numbers. */
+  /** A message is a live stream count, chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers. */
   private async applyOne(state: AgentState, message: TelegramMessage, year: string): Promise<AgentState> {
     const live = parseLiveOrders(message.text, year);
     if (live) return this.applyLiveMessage(state, { live, message });
-    if (isPlanChatter(message.text)) return state;
+    if (isChatter(message.text)) return state;
     return this.applyOrderMessage(state, { message, year });
   }
 

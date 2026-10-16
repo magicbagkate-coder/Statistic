@@ -15,13 +15,15 @@ function sumOrdersBySource(shiftReports: ShiftReport[]): Map<string, number> {
 
 /**
  * Whole-day report: leads counted over the whole day without choosing managers, orders = both shifts' orders added up,
- * plus the service manager's live stream block (live stream conversion = live stream orders / live stream leads,
- * service requests = returns + service requests).
+ * plus the service manager's live stream block: live stream leads = chats still in the live stream status at the end
+ * of the day + live stream orders, conversion = live stream orders / live stream leads,
+ * service requests = returns + service requests.
  */
 export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[]; plan?: PlanValues }): DayReport {
   const { entry, counts, shiftReports, plan } = input;
   const { day, service } = counts;
   const orders = shiftReports.reduce((sum, report) => sum + report.orders, 0);
+  const liveLeads = service.liveStream + entry.count;
   return {
     date: entry.date,
     leads: day.leads,
@@ -32,9 +34,9 @@ export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; sh
     conversion: conversionPercent(orders, day.target),
     plan,
     rows: buildSourceRows(day, sumOrdersBySource(shiftReports)),
-    liveLeads: service.liveStream,
+    liveLeads,
     liveOrders: entry.count,
-    liveConversion: conversionPercent(entry.count, service.liveStream),
+    liveConversion: conversionPercent(entry.count, liveLeads),
     serviceRequests: service.returns + service.serviceRequests,
   };
 }

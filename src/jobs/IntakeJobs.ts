@@ -3,7 +3,6 @@ import { Interval } from '@nestjs/schedule';
 
 import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
-import type { PlanEntry } from '@/types/PlanEntry';
 
 import { describeError } from '@/common/describeError';
 import { batchOrderIds } from '@/orders/batchOrderIds';
@@ -30,8 +29,8 @@ export class IntakeJobs {
     this.isRunning = true;
     try {
       const ready = await this.intake.collectReady(Date.now());
-      for (const batch of ready.batches) await this.processBatch(batch, ready.plans);
-      for (const entry of ready.liveOrders) await this.processLiveOrders(entry, ready.plans);
+      for (const batch of ready.batches) await this.processBatch(batch);
+      for (const entry of ready.liveOrders) await this.processLiveOrders(entry);
     } catch (error) {
       this.logger.error(`Order polling failed: ${describeError(error)}`);
     } finally {
@@ -39,9 +38,9 @@ export class IntakeJobs {
     }
   }
 
-  private async processBatch(batch: OrderBatch, plans: PlanEntry[]): Promise<void> {
+  private async processBatch(batch: OrderBatch): Promise<void> {
     try {
-      const report = await this.reports.prepareReport({ batch, now: Date.now(), plans });
+      const report = await this.reports.prepareReport({ batch, now: Date.now() });
       if (!report) return;
       await this.delivery.deliver(report);
       this.logger.log(`Report sent for ${batch.date}, shift ${batch.shift}, ${batchOrderIds(batch).length} orders`);
@@ -52,9 +51,9 @@ export class IntakeJobs {
     await this.intake.completeBatch(batch);
   }
 
-  private async processLiveOrders(entry: LiveOrders, plans: PlanEntry[]): Promise<void> {
+  private async processLiveOrders(entry: LiveOrders): Promise<void> {
     try {
-      const report = await this.reports.prepareDayReport({ entry, now: Date.now(), plans });
+      const report = await this.reports.prepareDayReport({ entry, now: Date.now() });
       if (!report) return;
       await this.delivery.deliverDay(report);
       this.logger.log(`Day report sent for ${entry.date}, ${entry.count} live stream orders`);

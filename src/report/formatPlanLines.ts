@@ -21,7 +21,7 @@ function formatOrdersLine(plan: number, fact: number): string {
 function formatConversionLine(plan: number, fact: number | undefined): string {
   if (fact === undefined) return `${REPORT_TEXTS.planConversion}: ${formatPercent(plan)} · ${REPORT_TEXTS.fact}: ${REPORT_TEXTS.noValue} (${REPORT_TEXTS.noValue})`;
   const gap = Math.round((fact - plan) * 10) / 10;
-  const verdict = describeGap({ gap, amount: `${Math.abs(gap).toFixed(1).replace('.', ',')} ${REPORT_TEXTS.pointsShort}` });
+  const verdict = describeGap({ gap, amount: `${Math.abs(gap).toFixed(1).replace('.', ',')}%` });
   return `${REPORT_TEXTS.planConversion}: ${formatPercent(plan)} · ${REPORT_TEXTS.fact}: ${formatPercent(fact)} (${verdict})`;
 }
 

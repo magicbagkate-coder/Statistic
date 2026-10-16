@@ -63,16 +63,25 @@ describe('buildDayReport', () => {
     expect(report.rows.find((row) => row.source === 'Тикток')?.conversion).toBeUndefined();
   });
 
-  it('computes the live stream block: conversion over live stream leads, service requests = returns + service', () => {
-    expect(report.liveLeads).toBe(8);
+  it('adds live stream orders to the chats left in the live stream status to get the live stream leads', () => {
+    expect(report.liveLeads).toBe(14);
     expect(report.liveOrders).toBe(6);
-    expect(report.liveConversion).toBeCloseTo(75);
+    expect(report.liveConversion).toBeCloseTo((6 / 14) * 100);
+  });
+
+  it('sums returns with service requests', () => {
     expect(report.serviceRequests).toBe(4);
   });
 
-  it('has no live stream conversion without live stream leads', () => {
-    const none = buildDayReport({ entry: ENTRY, counts: { ...COUNTS, service: { ...COUNTS.service, liveStream: 0 } }, shiftReports: SHIFTS });
-    expect(none.liveConversion).toBeUndefined();
+  it('has a full live stream conversion when every live stream lead became an order, and none without leads or orders', () => {
+    const converted = buildDayReport({ entry: ENTRY, counts: { ...COUNTS, service: { ...COUNTS.service, liveStream: 0 } }, shiftReports: SHIFTS });
+    expect(converted.liveConversion).toBeCloseTo(100);
+    const empty = buildDayReport({
+      entry: { ...ENTRY, count: 0 },
+      counts: { ...COUNTS, service: { ...COUNTS.service, liveStream: 0 } },
+      shiftReports: SHIFTS,
+    });
+    expect(empty.liveConversion).toBeUndefined();
   });
 });
 
@@ -84,6 +93,6 @@ describe('formatDayReport', () => {
     expect(text).toContain('«Фейсбук»: 90 · «Новий БОТ»: 300');
     expect(text).toContain('Заказы: 35 · конверсия: 17,5%');
     expect(text).toContain('Инста 1: 400 / 120 / 26 / 21,7%');
-    expect(text).toContain('Алина\nПрямые эфиры: лиды 8 · заказы 6 · конверсия 75,0%\nСервисные обращения: 4 (возвраты + сервисные)');
+    expect(text).toContain('Алина\nПрямые эфиры: лиды 14 · заказы 6 · конверсия 42,9%\nСервисные обращения: 4 (возвраты + сервисные)');
   });
 });

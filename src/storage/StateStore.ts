@@ -5,7 +5,7 @@ import type { AgentState } from '@/types/AgentState';
 import { readJson, writeJson } from '@/storage/jsonFile';
 
 const STATE_PATH = 'data/state.json';
-const EMPTY_STATE: AgentState = { offset: 0, batches: [], liveOrders: [], plans: [], reminders: [] };
+const EMPTY_STATE: AgentState = { offset: 0, batches: [], liveOrders: [], reminders: [] };
 
 @Injectable()
 export class StateStore {

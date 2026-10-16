@@ -8,9 +8,9 @@ describe('shiftWindow', () => {
     expect(shiftWindow('2026-10-14', 1)).toEqual({ from: '2026-10-13T21:15:00.000Z', to: '2026-10-14T13:15:00.000Z' });
   });
 
-  it('runs the second shift from 16:15 to 00:30 of the next day, without overlapping the first', () => {
+  it('runs the second shift from 16:15 to 00:10 of the next day, without overlapping the first', () => {
     const second = shiftWindow('2026-10-14', 2);
-    expect(second).toEqual({ from: '2026-10-14T13:15:00.000Z', to: '2026-10-14T21:30:00.000Z' });
+    expect(second).toEqual({ from: '2026-10-14T13:15:00.000Z', to: '2026-10-14T21:10:00.000Z' });
     expect(second.from).toBe(shiftWindow('2026-10-14', 1).to);
   });
 

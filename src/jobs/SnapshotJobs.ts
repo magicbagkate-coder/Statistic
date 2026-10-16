@@ -27,8 +27,8 @@ export class SnapshotJobs {
     return this.takeShiftSnapshot({ date: kyivToday(), shift: 1 });
   }
 
-  /** 00:30 Kyiv: the second shift window and the whole working day of the previous date close. */
-  @Cron('30 0 * * *', { timeZone: KYIV_ZONE })
+  /** 00:10 Kyiv: the second shift window and the whole working day of the previous date close. */
+  @Cron('10 0 * * *', { timeZone: KYIV_ZONE })
   async snapshotSecondShift(): Promise<void> {
     const date = kyivYesterday();
     await this.takeShiftSnapshot({ date, shift: 2 });

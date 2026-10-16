@@ -9,3 +9,4 @@ services:
       TZ: Europe/Kyiv
     volumes:
       - ./data:/app/data
+      - ./credentials:/app/credentials:ro

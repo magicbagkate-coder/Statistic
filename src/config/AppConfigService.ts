@@ -19,5 +19,7 @@ export class AppConfigService {
     telegramBotToken: readEnv('TELEGRAM_BOT_TOKEN'),
     ordersChatId: Number(readEnv('TELEGRAM_ORDERS_CHAT_ID')),
     reportChatId: Number(readEnv('TELEGRAM_REPORT_CHAT_ID')),
+    googleCredentialsPath: readEnv('GOOGLE_CREDENTIALS_PATH'),
+    googleSpreadsheetId: readEnv('GOOGLE_SPREADSHEET_ID'),
   };
 }

@@ -25,6 +25,10 @@ export class ReportStore {
     return writeJson(this.pathFor(stored.report.date, 'day'), stored);
   }
 
+  loadDay(date: string): Promise<StoredDayReport | undefined> {
+    return readJson<StoredDayReport>(this.pathFor(date, 'day'));
+  }
+
   existsDay(date: string): Promise<boolean> {
     return this.fileExists(this.pathFor(date, 'day'));
   }

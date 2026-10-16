@@ -5,4 +5,6 @@ export type AppConfig = {
   telegramBotToken: string;
   ordersChatId: number;
   reportChatId: number;
+  googleCredentialsPath: string;
+  googleSpreadsheetId: string;
 };

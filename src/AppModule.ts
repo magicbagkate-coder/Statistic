@@ -12,6 +12,8 @@ import { ReminderService } from '@/reminders/ReminderService';
 import { ReportDeliveryService } from '@/report/ReportDeliveryService';
 import { ReportService } from '@/report/ReportService';
 import { ScheduleService } from '@/schedule/ScheduleService';
+import { SheetsClient } from '@/sheets/SheetsClient';
+import { SheetsReportWriter } from '@/sheets/SheetsReportWriter';
 import { SitniksService } from '@/sitniks/SitniksService';
 import { DaySnapshotService } from '@/snapshots/DaySnapshotService';
 import { ShiftSnapshotService } from '@/snapshots/ShiftSnapshotService';
@@ -40,6 +42,8 @@ import { TelegramService } from '@/telegram/TelegramService';
     ReportService,
     ReportDeliveryService,
     ReminderService,
+    SheetsClient,
+    SheetsReportWriter,
     IntakeJobs,
     SnapshotJobs,
     ReminderJobs,

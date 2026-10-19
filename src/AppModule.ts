@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { AppConfigService } from '@/config/AppConfigService';
+import { DayRowJobs } from '@/jobs/DayRowJobs';
 import { IntakeJobs } from '@/jobs/IntakeJobs';
 import { ReminderJobs } from '@/jobs/ReminderJobs';
 import { SnapshotJobs } from '@/jobs/SnapshotJobs';
@@ -19,6 +20,7 @@ import { DaySnapshotService } from '@/snapshots/DaySnapshotService';
 import { ShiftSnapshotService } from '@/snapshots/ShiftSnapshotService';
 import { SnapshotStore } from '@/snapshots/SnapshotStore';
 import { MessageLogStore } from '@/storage/MessageLogStore';
+import { DayRowStore } from '@/storage/DayRowStore';
 import { ReportStore } from '@/storage/ReportStore';
 import { StateStore } from '@/storage/StateStore';
 import { TelegramService } from '@/telegram/TelegramService';
@@ -44,7 +46,9 @@ import { TelegramService } from '@/telegram/TelegramService';
     ReminderService,
     SheetsClient,
     SheetsReportWriter,
+    DayRowStore,
     IntakeJobs,
+    DayRowJobs,
     SnapshotJobs,
     ReminderJobs,
   ],

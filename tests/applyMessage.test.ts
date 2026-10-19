@@ -26,6 +26,14 @@ describe('applyMessage', () => {
     expect(applyMessage(EMPTY, { orderIds: [8800456] }, meta(1, 1000))).toEqual(EMPTY);
   });
 
+  it('joins the open batch of the same date and shift when the list is sent again, so there is one report', () => {
+    const first = applyMessage(EMPTY, { caption: CAPTION, orderIds: [8800456, 8800748] }, meta(1, 1000));
+    const again = applyMessage(first, { caption: { ...CAPTION, leader: '' }, orderIds: [8800456, 8800748, 8800920] }, meta(2, 2000));
+    expect(again.batches).toHaveLength(1);
+    expect(batchOrderIds(again.batches[0])).toEqual([8800456, 8800748, 8800920]);
+    expect(again.batches[0]).toMatchObject({ leader: 'Оля', lastMessageAt: 2000 });
+  });
+
   it('starts a new batch for a new caption', () => {
     const first = applyMessage(EMPTY, { caption: CAPTION, orderIds: [8800456] }, meta(1, 1000));
     const second = applyMessage(first, { caption: { ...CAPTION, shift: 2 }, orderIds: [8800999] }, meta(2, 2000));

@@ -38,6 +38,11 @@ export class ReportDeliveryService {
     await this.writeToSheet({ write: () => this.sheet.writeDay(report), date: report.date });
   }
 
+  /** Adds only the whole-day row to the table (no Telegram message): used when the day report waits for the live stream count. */
+  writeDayRow(report: DayReport): Promise<void> {
+    return this.writeToSheet({ write: () => this.sheet.writeDay(report), date: report.date });
+  }
+
   async notifyFailure(request: { batch: OrderBatch; reason: string }): Promise<void> {
     const { batch, reason } = request;
     const title = `${REPORT_TEXTS.reportFailure} ${batch.shift} · ${formatDate(batch.date)}`;

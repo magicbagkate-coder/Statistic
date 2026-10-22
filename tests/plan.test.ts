@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ShiftReport } from '@/types/ShiftReport';
+
 import { dropStaleBatches, STALE_EMPTY_BATCH_MS } from '@/orders/dropStaleBatches';
 import { isChatter } from '@/orders/isChatter';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
+import { computeDayPlan } from '@/report/computeDayPlan';
 import { computePlan, PLAN_CONVERSION_PERCENT } from '@/report/computePlan';
 import { formatPlanLines } from '@/report/formatPlanLines';
 import { pluralOrders } from '@/report/pluralOrders';
@@ -17,6 +20,26 @@ describe('computePlan', () => {
   it('rounds to a whole number of orders and has an empty plan without target leads', () => {
     expect(computePlan(133)).toEqual({ orders: 29, conversion: 22 });
     expect(computePlan(0)).toEqual({ orders: 0, conversion: 22 });
+  });
+});
+
+function shiftWithPlan(plan: ShiftReport['plan']): ShiftReport {
+  return { date: '2026-10-18', shift: 1, leader: 'Оля', leads: 0, target: 0, facebook: 0, newBot: 0, orders: 0, rows: [], missingOrders: [], plan };
+}
+
+describe('computeDayPlan', () => {
+  it('adds the plans of the two shifts and plans the conversion from that sum and the day target leads', () => {
+    const shifts = [shiftWithPlan({ orders: 20, conversion: 22 }), shiftWithPlan({ orders: 18, conversion: 22 })];
+    expect(computeDayPlan({ shiftReports: shifts, target: 200 })).toEqual({ orders: 38, conversion: 19 });
+  });
+
+  it('has no planned conversion without target leads', () => {
+    const shifts = [shiftWithPlan({ orders: 20 }), shiftWithPlan({ orders: 18 })];
+    expect(computeDayPlan({ shiftReports: shifts, target: 0 })).toEqual({ orders: 38, conversion: undefined });
+  });
+
+  it('falls back to the day target leads when a shift report was saved without a plan', () => {
+    expect(computeDayPlan({ shiftReports: [shiftWithPlan({ orders: 20 }), shiftWithPlan(undefined)], target: 200 })).toEqual(computePlan(200));
   });
 });
 

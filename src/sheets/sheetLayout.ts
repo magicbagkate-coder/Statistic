@@ -23,8 +23,12 @@ export const FIRST_BLOCK_COLUMN = 2;
 export const HEADER_ROWS = 2;
 export const DATA_FIRST_ROW = 3;
 export const GRID_ROWS = 1000;
-/** The closing columns, the same totals as in the Telegram report: all leads, target leads, orders and the two conversions. */
+/**
+ * The closing columns: the live stream orders (filled in the day row only) and the totals of the Telegram report:
+ * all leads, target leads, orders (the live stream orders are included) and the two conversions.
+ */
 export const TOTAL_HEADERS: readonly string[] = [
+  'Прямой эфир (заказы)',
   'Всего лидов (общих)',
   'Всего лидов (целевых)',
   'Всего продано',
@@ -33,7 +37,7 @@ export const TOTAL_HEADERS: readonly string[] = [
 ];
 
 /** Offsets, from the first closing column, of the two conversion columns. */
-export const TOTAL_PERCENT_OFFSETS: readonly number[] = [3, 4];
+export const TOTAL_PERCENT_OFFSETS: readonly number[] = [4, 5];
 
 export const LABEL_FONT_SIZE = 12;
 export const DAY_ROW_COLOR = '#d9ead3';

@@ -9,6 +9,7 @@ import { kyivDayAfter, kyivLocalToIso } from '@/common/kyivTime';
 import { batchOrderIds } from '@/orders/batchOrderIds';
 import { buildDayReport } from '@/report/buildDayReport';
 import { buildShiftReport } from '@/report/buildShiftReport';
+import { computeDayPlan } from '@/report/computeDayPlan';
 import { computePlan } from '@/report/computePlan';
 import { SitniksService } from '@/sitniks/SitniksService';
 import { SnapshotStore } from '@/snapshots/SnapshotStore';
@@ -43,7 +44,7 @@ export class ReportService {
 
   /**
    * Builds the whole-day report once the day snapshot and both shift reports exist (the orders are their sum);
-   * the plan follows from the day's target leads. Returns undefined while something is still missing;
+   * the plan is the sum of the two shifts' plans. Returns undefined while something is still missing;
    * after a long wait it names what is missing.
    */
   async prepareDayReport(request: { entry: LiveOrders; now: number }): Promise<DayReport | undefined> {
@@ -51,7 +52,7 @@ export class ReportService {
     const counts = await this.snapshots.loadDay(entry.date);
     const shiftReports = await this.loadShiftReports(entry.date);
     if (counts && shiftReports.length === 2) {
-      return buildDayReport({ entry, counts, shiftReports, plan: computePlan(counts.day.target) });
+      return buildDayReport({ entry, counts, shiftReports, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
     }
     if (now - entry.lastMessageAt < SNAPSHOT_WAIT_LIMIT_MS) return undefined;
     throw new Error(`Cannot build the day report for ${entry.date}: ${counts ? '' : 'no day snapshot, '}${shiftReports.length} of 2 shift reports`);
@@ -66,7 +67,7 @@ export class ReportService {
     const shiftReports = await this.loadShiftReports(date);
     if (!counts || shiftReports.length < 2) return undefined;
     const entry = { date, count: 0, messageId: 0, lastMessageAt: 0 };
-    return buildDayReport({ entry, counts, shiftReports, plan: computePlan(counts.day.target) });
+    return buildDayReport({ entry, counts, shiftReports, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
   }
 
   /**

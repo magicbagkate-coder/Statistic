@@ -5,8 +5,9 @@ import { SOURCE_BLOCKS } from '@/sheets/sheetLayout';
 
 type BlockTotals = { leads: number; target: number; orders: number };
 
-/** A fraction for a percent-formatted cell; an empty cell when there is nothing to divide by. */
+/** A fraction for a percent-formatted cell: zero when there are no orders, an empty cell when orders have nothing to divide by. */
 function ratio(orders: number, base: number): number | string {
+  if (orders === 0) return 0;
   return base === 0 ? '' : orders / base;
 }
 
@@ -28,9 +29,12 @@ function blockCells(block: SourceBlock, totals: BlockTotals): (string | number)[
 
 type Totals = { leads: number; target: number; orders: number };
 
-/** The cells of one table row from the first block to the closing totals (leads, target leads, orders, two conversions). */
-export function buildRowValues(request: { rows: ReportRow[]; totals: Totals }): (string | number)[] {
+/**
+ * The cells of one table row from the first block to the closing columns: the live stream orders (empty in shift rows),
+ * then the totals (leads, target leads, orders, two conversions).
+ */
+export function buildRowValues(request: { rows: ReportRow[]; totals: Totals; live: number | '' }): (string | number)[] {
   const cells = SOURCE_BLOCKS.flatMap((block) => blockCells(block, sumBlock(request.rows, block)));
   const { leads, target, orders } = request.totals;
-  return [...cells, leads, target, orders, ratio(orders, leads), ratio(orders, target)];
+  return [...cells, request.live, leads, target, orders, ratio(orders, leads), ratio(orders, target)];
 }

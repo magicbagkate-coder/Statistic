@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DayReport } from '@/types/DayReport';
 import type { ReportRow } from '@/types/ReportRow';
 
 import { buildHeaderValues } from '@/sheets/buildHeaderValues';
 import { buildRowValues } from '@/sheets/buildRowValues';
+import { dayTableTotals } from '@/sheets/dayTableTotals';
 import { sheetDateSerial } from '@/sheets/sheetDateSerial';
 import { blockStarts, totalColumn } from '@/sheets/sheetLayout';
 
@@ -22,13 +24,20 @@ describe('sheetDateSerial', () => {
   });
 });
 
+describe('dayTableTotals', () => {
+  it('adds the live stream orders to the shifts orders and keeps the leads as they are', () => {
+    const report = { date: '2026-10-18', leads: 300, target: 120, orders: 29, liveOrders: 4 } as DayReport;
+    expect(dayTableTotals(report)).toEqual({ leads: 300, target: 120, orders: 33 });
+  });
+});
+
 describe('buildHeaderValues', () => {
   const [titles, names] = buildHeaderValues();
 
-  it('has two header rows as wide as the table, ending with the three totals', () => {
-    expect(titles).toHaveLength(totalColumn() + 5);
-    expect(names).toHaveLength(totalColumn() + 5);
-    expect(titles.slice(-5)).toEqual(['Всего лидов (общих)', 'Всего лидов (целевых)', 'Всего продано', 'Конверсия общая', 'Конверсия целевая']);
+  it('has two header rows as wide as the table, ending with the live stream orders and the totals', () => {
+    expect(titles).toHaveLength(totalColumn() + 6);
+    expect(names).toHaveLength(totalColumn() + 6);
+    expect(titles.slice(-6)).toEqual(['Прямой эфир (заказы)', 'Всего лидов (общих)', 'Всего лидов (целевых)', 'Всего продано', 'Конверсия общая', 'Конверсия целевая']);
   });
 
   it('puts each block title in the first cell of its block', () => {
@@ -40,13 +49,13 @@ describe('buildHeaderValues', () => {
 });
 
 describe('buildRowValues', () => {
-  const cells = buildRowValues({ rows: ROWS, totals: { leads: 300, target: 120, orders: 29 } });
+  const cells = buildRowValues({ rows: ROWS, totals: { leads: 300, target: 120, orders: 29 }, live: 4 });
   const starts = blockStarts();
   const blockCells = (block: number): (string | number)[] => cells.slice(starts[block] - 2, starts[block] - 2 + 5);
 
-  it('has one cell per column from the first block to the end, closing with all leads, target leads, orders and the two conversions', () => {
-    expect(cells).toHaveLength(totalColumn() - 2 + 5);
-    expect(cells.slice(-5)).toEqual([300, 120, 29, 29 / 300, 29 / 120]);
+  it('has one cell per column from the first block to the end, closing with the live stream orders, all leads, target leads, orders and the two conversions', () => {
+    expect(cells).toHaveLength(totalColumn() - 2 + 6);
+    expect(cells.slice(-6)).toEqual([4, 300, 120, 29, 29 / 300, 29 / 120]);
   });
 
   it('writes leads, target leads, orders and the two conversions as fractions', () => {
@@ -57,9 +66,12 @@ describe('buildRowValues', () => {
     expect(blockCells(2)).toEqual([10, 5, 3, 0.3, 0.6]);
   });
 
-  it('leaves a conversion empty when there is nothing to divide by, and keeps blocks without target leads at three columns', () => {
+  it('leaves a conversion empty when orders have nothing to divide by, and keeps blocks without target leads at three columns', () => {
     const viber = cells.slice(starts[6] - 2, starts[6] - 2 + 3);
     expect(viber).toEqual([0, 1, '']);
-    expect(blockCells(1)).toEqual([0, 0, 0, '', '']);
+  });
+
+  it('writes zero for both conversions when there are no orders, even with no leads', () => {
+    expect(blockCells(1)).toEqual([0, 0, 0, 0, 0]);
   });
 });

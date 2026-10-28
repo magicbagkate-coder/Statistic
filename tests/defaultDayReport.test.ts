@@ -29,6 +29,16 @@ function build(request: { existsDay: boolean }): ReportService {
 const BEFORE_DEADLINE = Date.parse('2026-10-18T22:30:00Z');
 const AFTER_DEADLINE = Date.parse('2026-10-18T23:30:00Z');
 
+describe('prepareDayTableReport', () => {
+  it('builds the table numbers while the day report has not been sent', async () => {
+    expect(await build({ existsDay: false }).prepareDayTableReport('2026-10-18')).toMatchObject({ orders: 35, liveOrders: 0 });
+  });
+
+  it('does not build them once the day report has been sent, so the row with the live stream orders is not overwritten', async () => {
+    expect(await build({ existsDay: true }).prepareDayTableReport('2026-10-18')).toBeUndefined();
+  });
+});
+
 describe('prepareDefaultDayReport', () => {
   it('waits for the live stream message until 02:00 Kyiv time of the next day', async () => {
     expect(await build({ existsDay: false }).prepareDefaultDayReport({ date: '2026-10-18', now: BEFORE_DEADLINE })).toBeUndefined();

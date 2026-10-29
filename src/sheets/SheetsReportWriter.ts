@@ -14,7 +14,7 @@ import { DATA_FIRST_ROW, DAY_LABEL, DAY_ROW_COLOR, FIRST_BLOCK_COLUMN, GROUP_LAB
 import { SheetsClient } from '@/sheets/SheetsClient';
 
 type SheetRef = { title: string; sheetId: number };
-type RowRequest = { date: string; label: string; rows: ReportRow[]; totals: { leads: number; target: number; orders: number }; live: number | '' };
+type RowRequest = { date: string; label: string; rows: ReportRow[]; totals: { leads: number; target: number; orders: number }; live: { leads: number | ''; orders: number | '' }; exchanges: number | '' };
 
 @Injectable()
 export class SheetsReportWriter {
@@ -27,13 +27,14 @@ export class SheetsReportWriter {
       label: String(report.shift),
       rows: report.rows,
       totals: { leads: report.leads, target: report.target, orders: report.orders },
-      live: '',
+      live: { leads: '', orders: '' },
+      exchanges: '',
     });
   }
 
-  /** Writes the day row: the live stream orders get their own column and are added to the total of sold orders. */
+  /** Writes the day row: the live stream leads and orders and the exchanges get their own columns, the orders and exchanges are added to the total of sold orders. */
   writeDay(report: DayReport): Promise<void> {
-    return this.writeRow({ date: report.date, label: DAY_LABEL, rows: report.rows, totals: dayTableTotals(report), live: report.liveOrders });
+    return this.writeRow({ date: report.date, label: DAY_LABEL, rows: report.rows, totals: dayTableTotals(report), live: { leads: report.liveLeads, orders: report.liveOrders }, exchanges: report.exchanges ?? '' });
   }
 
   /** Empties the table sheet (values, merges, formats) so the layout is built again by the next write. */
@@ -46,7 +47,7 @@ export class SheetsReportWriter {
     await this.ensureLayout(sheet);
     const groupStart = await this.findOrCreateGroup({ sheet, date: request.date });
     const row = groupStart + GROUP_LABELS.indexOf(request.label);
-    const values = [buildRowValues({ rows: request.rows, totals: request.totals, live: request.live })];
+    const values = [buildRowValues({ rows: request.rows, totals: request.totals, live: request.live, exchanges: request.exchanges })];
     await this.client.writeValues({ range: `'${sheet.title}'!${this.columnName(FIRST_BLOCK_COLUMN)}${row}`, values });
   }
 

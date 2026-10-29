@@ -4,4 +4,5 @@ import type { OrderBatch } from '@/types/OrderBatch';
 export type ReadyItems = {
   batches: OrderBatch[];
   liveOrders: LiveOrders[];
+  exchanges: LiveOrders[];
 };

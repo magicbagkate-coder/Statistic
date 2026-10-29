@@ -10,6 +10,7 @@ export type ShiftReport = {
   target: number;
   facebook: number;
   newBot: number;
+  awaitingPayment?: number;
   orders: number;
   conversion?: number;
   plan?: PlanValues;

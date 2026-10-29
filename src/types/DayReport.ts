@@ -7,6 +7,7 @@ export type DayReport = {
   target: number;
   facebook: number;
   newBot: number;
+  awaitingPayment?: number;
   orders: number;
   conversion?: number;
   plan?: PlanValues;
@@ -15,4 +16,6 @@ export type DayReport = {
   liveOrders: number;
   liveConversion?: number;
   serviceRequests: number;
+  /** Exchange orders of the day, written by the service manager; absent in reports made before they were counted. */
+  exchanges?: number;
 };

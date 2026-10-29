@@ -28,13 +28,14 @@ function blockCells(block: SourceBlock, totals: BlockTotals): (string | number)[
 }
 
 type Totals = { leads: number; target: number; orders: number };
+type LiveCells = { leads: number | ''; orders: number | '' };
 
 /**
- * The cells of one table row from the first block to the closing columns: the live stream orders (empty in shift rows),
+ * The cells of one table row from the first block to the closing columns: the live stream leads and orders and the exchanges (empty in shift rows),
  * then the totals (leads, target leads, orders, two conversions).
  */
-export function buildRowValues(request: { rows: ReportRow[]; totals: Totals; live: number | '' }): (string | number)[] {
+export function buildRowValues(request: { rows: ReportRow[]; totals: Totals; live: LiveCells; exchanges: number | '' }): (string | number)[] {
   const cells = SOURCE_BLOCKS.flatMap((block) => blockCells(block, sumBlock(request.rows, block)));
   const { leads, target, orders } = request.totals;
-  return [...cells, request.live, leads, target, orders, ratio(orders, leads), ratio(orders, target)];
+  return [...cells, request.live.leads, request.live.orders, request.exchanges, leads, target, orders, ratio(orders, leads), ratio(orders, target)];
 }

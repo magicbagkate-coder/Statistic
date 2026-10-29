@@ -1,5 +1,6 @@
 import type { ShiftReport } from '@/types/ShiftReport';
 
+import { formatAwaitingPayment } from '@/report/formatAwaitingPayment';
 import { formatPercent } from '@/report/formatPercent';
 import { formatPlanLines } from '@/report/formatPlanLines';
 import { formatSourceRow } from '@/report/formatSourceRow';
@@ -22,6 +23,7 @@ export function formatReport(report: ShiftReport): string {
     formatTitle(report),
     `${REPORT_TEXTS.leads}: ${report.leads} · ${REPORT_TEXTS.target}: ${report.target}`,
     `${REPORT_TEXTS.facebook}: ${report.facebook} · ${REPORT_TEXTS.newBot}: ${report.newBot}`,
+    ...formatAwaitingPayment(report.awaitingPayment),
     `${REPORT_TEXTS.orders}: ${report.orders} · ${REPORT_TEXTS.conversion}: ${formatPercent(report.conversion)}`,
     ...formatPlanLines({ plan: report.plan, orders: report.orders, conversion: report.conversion }),
     '',

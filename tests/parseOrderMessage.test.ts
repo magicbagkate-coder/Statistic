@@ -7,6 +7,7 @@ describe('parseOrderMessage', () => {
     expect(parseOrderMessage('14.10.26, смена 2, руководитель Наташа', '2026')).toEqual({
       caption: { date: '2026-10-14', shift: 2, leader: 'Наташа' },
       orderIds: [],
+      unnumbered: [],
     });
   });
 
@@ -25,6 +26,7 @@ describe('parseOrderMessage', () => {
     expect(parseOrderMessage('8800456\n8800748 (19658)\r\n 8800920 ', '2026')).toEqual({
       caption: undefined,
       orderIds: [8800456, 8800748, 8800920],
+      unnumbered: [],
     });
   });
 
@@ -34,8 +36,16 @@ describe('parseOrderMessage', () => {
     expect(parsed.orderIds).toEqual([8800456, 8800748]);
   });
 
+  it('reads the orders without a number yet with their sources and keeps them out of the caption', () => {
+    const text = '23.10\nСмена 1\nНаташа\n\n8800456\nнет номера заказа (первый аккаунт инстаграм)\nНет номера заказа (ФБ 2)\nнет номера заказа';
+    const parsed = parseOrderMessage(text, '2026');
+    expect(parsed.caption).toEqual({ date: '2026-10-23', shift: 1, leader: 'Наташа' });
+    expect(parsed.orderIds).toEqual([8800456]);
+    expect(parsed.unnumbered).toEqual(['Инста 1', 'ФБ 2', 'Без источника']);
+  });
+
   it('ignores ordinary chatter and the short numbers alone', () => {
-    expect(parseOrderMessage('всем привет, вот заказы', '2026')).toEqual({ caption: undefined, orderIds: [] });
+    expect(parseOrderMessage('всем привет, вот заказы', '2026')).toEqual({ caption: undefined, orderIds: [], unnumbered: [] });
     expect(parseOrderMessage('19689', '2026').orderIds).toEqual([]);
   });
 });

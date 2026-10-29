@@ -3,6 +3,7 @@ import { Interval } from '@nestjs/schedule';
 
 import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
+import type { ReadyItems } from '@/types/ReadyItems';
 
 import { describeError } from '@/common/describeError';
 import { batchOrderIds } from '@/orders/batchOrderIds';
@@ -28,14 +29,19 @@ export class IntakeJobs {
     if (this.isRunning) return;
     this.isRunning = true;
     try {
-      const ready = await this.intake.collectReady(Date.now());
-      for (const batch of ready.batches) await this.processBatch(batch);
-      for (const entry of ready.liveOrders) await this.processLiveOrders(entry);
+      await this.processReady(await this.intake.collectReady(Date.now()));
     } catch (error) {
       this.logger.error(`Order polling failed: ${describeError(error)}`);
     } finally {
       this.isRunning = false;
     }
+  }
+
+  /** Shift lists first, then the live stream counts (the day reports take the exchange counts along), then the exchange updates. */
+  private async processReady(ready: ReadyItems): Promise<void> {
+    for (const batch of ready.batches) await this.processBatch(batch);
+    for (const entry of ready.liveOrders) await this.processLiveOrders({ entry, exchanges: ready.exchanges });
+    for (const entry of ready.exchanges) await this.processExchanges(entry);
   }
 
   private async processBatch(batch: OrderBatch): Promise<void> {
@@ -51,9 +57,11 @@ export class IntakeJobs {
     await this.intake.completeBatch(batch);
   }
 
-  private async processLiveOrders(entry: LiveOrders): Promise<void> {
+  private async processLiveOrders(request: { entry: LiveOrders; exchanges: LiveOrders[] }): Promise<void> {
+    const { entry, exchanges } = request;
     try {
-      const report = await this.reports.prepareDayReport({ entry, now: Date.now() });
+      const exchangeCount = exchanges.find((item) => item.date === entry.date)?.count ?? 0;
+      const report = await this.reports.prepareDayReport({ entry, exchanges: exchangeCount, now: Date.now() });
       if (!report) return;
       await this.delivery.deliverDay(report);
       this.logger.log(`Day report sent for ${entry.date}, ${entry.count} live stream orders`);
@@ -62,5 +70,17 @@ export class IntakeJobs {
       await this.delivery.notifyDayFailure({ date: entry.date, reason: describeError(error) });
     }
     await this.intake.completeLiveOrders(entry);
+  }
+
+  /** A day report that went out without the exchange count (or with another one) is sent and written again with it. */
+  private async processExchanges(entry: LiveOrders): Promise<void> {
+    try {
+      const report = await this.reports.updateDayExchanges({ date: entry.date, count: entry.count });
+      if (!report) return;
+      await this.delivery.deliverDay(report);
+      this.logger.log(`Day report for ${entry.date} sent again with ${entry.count} exchange orders`);
+    } catch (error) {
+      this.logger.error(`Exchange update failed for ${entry.date}: ${describeError(error)}`);
+    }
   }
 }

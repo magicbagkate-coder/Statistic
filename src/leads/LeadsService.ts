@@ -7,6 +7,7 @@ import type { SourceCount } from '@/types/SourceCount';
 
 import { findSourceLabel } from '@/leads/leadSources';
 import {
+  AWAITING_PAYMENT_STATUS,
   FACEBOOK_STATUS,
   LEAD_STATUSES,
   LIVE_STREAM_STATUS,
@@ -29,6 +30,7 @@ export class LeadsService {
       target: target.length,
       facebook: leads.filter((chat) => chat.status === FACEBOOK_STATUS).length,
       newBot: leads.filter((chat) => chat.status === NEW_BOT_STATUS).length,
+      awaitingPayment: leads.filter((chat) => chat.status === AWAITING_PAYMENT_STATUS).length,
       bySource: this.groupBySource(leads, target),
     };
   }

@@ -47,15 +47,25 @@ export class ReportService {
    * the plan is the sum of the two shifts' plans. Returns undefined while something is still missing;
    * after a long wait it names what is missing.
    */
-  async prepareDayReport(request: { entry: LiveOrders; now: number }): Promise<DayReport | undefined> {
-    const { entry, now } = request;
+  async prepareDayReport(request: { entry: LiveOrders; exchanges: number; now: number }): Promise<DayReport | undefined> {
+    const { entry, exchanges, now } = request;
     const counts = await this.snapshots.loadDay(entry.date);
     const shiftReports = await this.loadShiftReports(entry.date);
     if (counts && shiftReports.length === 2) {
-      return buildDayReport({ entry, counts, shiftReports, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
+      return buildDayReport({ entry, counts, shiftReports, exchanges, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
     }
     if (now - entry.lastMessageAt < SNAPSHOT_WAIT_LIMIT_MS) return undefined;
     throw new Error(`Cannot build the day report for ${entry.date}: ${counts ? '' : 'no day snapshot, '}${shiftReports.length} of 2 shift reports`);
+  }
+
+  /**
+   * The sent day report with a changed exchange count (a late or corrected message), to be sent and written again.
+   * Undefined when the day report does not exist yet or already has this count.
+   */
+  async updateDayExchanges(request: { date: string; count: number }): Promise<DayReport | undefined> {
+    const stored = await this.reportStore.loadDay(request.date);
+    if (!stored || (stored.report.exchanges ?? 0) === request.count) return undefined;
+    return { ...stored.report, exchanges: request.count };
   }
 
   /**

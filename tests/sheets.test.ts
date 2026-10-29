@@ -25,19 +25,20 @@ describe('sheetDateSerial', () => {
 });
 
 describe('dayTableTotals', () => {
-  it('adds the live stream orders to the shifts orders and keeps the leads as they are', () => {
-    const report = { date: '2026-10-18', leads: 300, target: 120, orders: 29, liveOrders: 4 } as DayReport;
-    expect(dayTableTotals(report)).toEqual({ leads: 300, target: 120, orders: 33 });
+  it('adds the live stream and exchange orders to the shifts orders and keeps the leads as they are', () => {
+    const report = { date: '2026-10-18', leads: 300, target: 120, orders: 29, liveOrders: 4, exchanges: 2 } as DayReport;
+    expect(dayTableTotals(report)).toEqual({ leads: 300, target: 120, orders: 35 });
+    expect(dayTableTotals({ ...report, exchanges: undefined })).toEqual({ leads: 300, target: 120, orders: 33 });
   });
 });
 
 describe('buildHeaderValues', () => {
   const [titles, names] = buildHeaderValues();
 
-  it('has two header rows as wide as the table, ending with the live stream orders and the totals', () => {
-    expect(titles).toHaveLength(totalColumn() + 6);
-    expect(names).toHaveLength(totalColumn() + 6);
-    expect(titles.slice(-6)).toEqual(['Прямой эфир (заказы)', 'Всего лидов (общих)', 'Всего лидов (целевых)', 'Всего продано', 'Конверсия общая', 'Конверсия целевая']);
+  it('has two header rows as wide as the table, ending with the live stream leads and orders, the exchanges and the totals', () => {
+    expect(titles).toHaveLength(totalColumn() + 8);
+    expect(names).toHaveLength(totalColumn() + 8);
+    expect(titles.slice(-8)).toEqual(['Прямой эфир (лиды)', 'Прямой эфир (заказы)', 'Обмены', 'Всего лидов (общих)', 'Всего лидов (целевых)', 'Всего продано', 'Конверсия общая', 'Конверсия целевая']);
   });
 
   it('puts each block title in the first cell of its block', () => {
@@ -49,13 +50,13 @@ describe('buildHeaderValues', () => {
 });
 
 describe('buildRowValues', () => {
-  const cells = buildRowValues({ rows: ROWS, totals: { leads: 300, target: 120, orders: 29 }, live: 4 });
+  const cells = buildRowValues({ rows: ROWS, totals: { leads: 300, target: 120, orders: 29 }, live: { leads: 7, orders: 4 }, exchanges: 2 });
   const starts = blockStarts();
   const blockCells = (block: number): (string | number)[] => cells.slice(starts[block] - 2, starts[block] - 2 + 5);
 
-  it('has one cell per column from the first block to the end, closing with the live stream orders, all leads, target leads, orders and the two conversions', () => {
-    expect(cells).toHaveLength(totalColumn() - 2 + 6);
-    expect(cells.slice(-6)).toEqual([4, 300, 120, 29, 29 / 300, 29 / 120]);
+  it('has one cell per column from the first block to the end, closing with the live stream leads and orders, the exchanges, all leads, target leads, orders and the two conversions', () => {
+    expect(cells).toHaveLength(totalColumn() - 2 + 8);
+    expect(cells.slice(-8)).toEqual([7, 4, 2, 300, 120, 29, 29 / 300, 29 / 120]);
   });
 
   it('writes leads, target leads, orders and the two conversions as fractions', () => {

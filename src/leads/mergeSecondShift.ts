@@ -3,7 +3,7 @@ import type { LeadCounts } from '@/types/LeadCounts';
 /**
  * Builds second shift counts from chats whose last message fell into 16:00-24:00:
  * general leads come from the managers of both shifts (morning chats may be continued in the evening),
- * while target leads, Facebook and new bot come from the second shift managers only.
+ * while target leads, Facebook, new bot and the leads awaiting payment come from the second shift managers only.
  */
 export function mergeSecondShift(parts: { direct: LeadCounts; bothShifts: LeadCounts }): LeadCounts {
   const { direct, bothShifts } = parts;
@@ -18,6 +18,7 @@ export function mergeSecondShift(parts: { direct: LeadCounts; bothShifts: LeadCo
     target: direct.target,
     facebook: direct.facebook,
     newBot: direct.newBot,
+    awaitingPayment: direct.awaitingPayment,
     bySource,
   };
 }

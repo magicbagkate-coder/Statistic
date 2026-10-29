@@ -1,5 +1,7 @@
 import type { DayReport } from '@/types/DayReport';
 
+import { formatAwaitingPayment } from '@/report/formatAwaitingPayment';
+import { formatExchanges } from '@/report/formatExchanges';
 import { formatPercent } from '@/report/formatPercent';
 import { formatPlanLines } from '@/report/formatPlanLines';
 import { formatDate } from '@/report/formatReport';
@@ -12,6 +14,7 @@ export function formatDayReport(report: DayReport): string {
     `${REPORT_TEXTS.dayTitle} · ${formatDate(report.date)}`,
     `${REPORT_TEXTS.leads}: ${report.leads} · ${REPORT_TEXTS.target}: ${report.target}`,
     `${REPORT_TEXTS.facebook}: ${report.facebook} · ${REPORT_TEXTS.newBot}: ${report.newBot}`,
+    ...formatAwaitingPayment(report.awaitingPayment),
     `${REPORT_TEXTS.orders}: ${report.orders} · ${REPORT_TEXTS.conversion}: ${formatPercent(report.conversion)}`,
     ...formatPlanLines({ plan: report.plan, orders: report.orders, conversion: report.conversion }),
     '',
@@ -20,6 +23,7 @@ export function formatDayReport(report: DayReport): string {
     '',
     REPORT_TEXTS.dayOwner,
     `${REPORT_TEXTS.liveStreams}: ${REPORT_TEXTS.liveLeads} ${report.liveLeads} · ${REPORT_TEXTS.liveOrders} ${report.liveOrders} · ${REPORT_TEXTS.conversion} ${formatPercent(report.liveConversion)}`,
+    ...formatExchanges(report.exchanges),
     `${REPORT_TEXTS.serviceRequests}: ${report.serviceRequests} ${REPORT_TEXTS.serviceHint}`,
   ].join('\n');
 }

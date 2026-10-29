@@ -8,10 +8,14 @@ import type { ReadyItems } from '@/types/ReadyItems';
 import type { TelegramMessage } from '@/types/TelegramMessage';
 
 import { kyivToday } from '@/common/kyivTime';
+import { applyExchangeOrders } from '@/orders/applyExchangeOrders';
 import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { applyMessage } from '@/orders/applyMessage';
+import { countListedOrders } from '@/orders/countListedOrders';
 import { dropStaleBatches } from '@/orders/dropStaleBatches';
+import { dropStaleExchanges } from '@/orders/dropStaleExchanges';
 import { isChatter } from '@/orders/isChatter';
+import { parseExchangeOrders } from '@/orders/parseExchangeOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
 import { resolveWorkingDate } from '@/orders/resolveWorkingDate';
@@ -36,10 +40,13 @@ export class OrderIntakeService {
     await this.messageLog.append(messages);
     const updated = await this.applyMessages(state, messages);
     const batches = dropStaleBatches(updated.batches, now);
-    await this.stateStore.save({ ...updated, batches, offset: nextOffset });
+    const exchanges = dropStaleExchanges(updated.exchanges, now);
+    await this.stateStore.save({ ...updated, batches, exchanges, offset: nextOffset });
+    const isQuiet = (entry: LiveOrders): boolean => now - entry.lastMessageAt >= QUIET_PERIOD_MS;
     return {
       batches: splitReadyBatches(batches, now).ready,
-      liveOrders: updated.liveOrders.filter((entry) => now - entry.lastMessageAt >= QUIET_PERIOD_MS),
+      liveOrders: updated.liveOrders.filter(isQuiet),
+      exchanges: exchanges.filter(isQuiet),
     };
   }
 
@@ -65,10 +72,12 @@ export class OrderIntakeService {
     return current;
   }
 
-  /** A message is a live stream count, chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers. */
+  /** A message is a live stream or exchange count, chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers. */
   private async applyOne(state: AgentState, message: TelegramMessage, year: string): Promise<AgentState> {
     const live = parseLiveOrders(message.text, year);
     if (live) return this.applyLiveMessage(state, { live, message });
+    const exchange = parseExchangeOrders(message.text, year);
+    if (exchange) return this.applyExchangeMessage(state, { exchange, message });
     if (isChatter(message.text)) return state;
     return this.applyOrderMessage(state, { message, year });
   }
@@ -79,10 +88,16 @@ export class OrderIntakeService {
     return applyLiveOrders(state, { date, count: live.count, messageId: message.messageId, lastMessageAt: message.sentAt });
   }
 
+  private applyExchangeMessage(state: AgentState, request: { exchange: ParsedLive; message: TelegramMessage }): AgentState {
+    const { exchange, message } = request;
+    const date = resolveWorkingDate(exchange.date, message.sentAt);
+    return applyExchangeOrders(state, { date, count: exchange.count, messageId: message.messageId, lastMessageAt: message.sentAt });
+  }
+
   private async applyOrderMessage(state: AgentState, request: { message: TelegramMessage; year: string }): Promise<AgentState> {
     const { message, year } = request;
     const parsed = parseOrderMessage(message.text, year);
-    if (parsed.orderIds.length > 0 && !parsed.caption && state.batches.length === 0) {
+    if (countListedOrders(parsed) > 0 && !parsed.caption && state.batches.length === 0) {
       await this.telegram.sendToOrdersChat(REPORT_TEXTS.missingCaption);
     }
     return applyMessage(state, parsed, message);

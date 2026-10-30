@@ -72,14 +72,17 @@ export class OrderIntakeService {
     return current;
   }
 
-  /** A message is a live stream or exchange count, chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers. */
+  /**
+   * A message is a live stream and/or exchange count (the exchanges may be written under the live stream count),
+   * chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers.
+   */
   private async applyOne(state: AgentState, message: TelegramMessage, year: string): Promise<AgentState> {
-    const live = parseLiveOrders(message.text, year);
-    if (live) return this.applyLiveMessage(state, { live, message });
     const exchange = parseExchangeOrders(message.text, year);
-    if (exchange) return this.applyExchangeMessage(state, { exchange, message });
-    if (isChatter(message.text)) return state;
-    return this.applyOrderMessage(state, { message, year });
+    const withExchange = exchange ? this.applyExchangeMessage(state, { exchange, message }) : state;
+    const live = parseLiveOrders(message.text, year);
+    if (live) return this.applyLiveMessage(withExchange, { live, message });
+    if (exchange || isChatter(message.text)) return withExchange;
+    return this.applyOrderMessage(withExchange, { message, year });
   }
 
   private applyLiveMessage(state: AgentState, request: { live: ParsedLive; message: TelegramMessage }): AgentState {

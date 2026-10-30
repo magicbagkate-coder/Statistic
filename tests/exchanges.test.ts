@@ -11,6 +11,7 @@ import type { ShiftReport } from '@/types/ShiftReport';
 import { applyExchangeOrders } from '@/orders/applyExchangeOrders';
 import { dropStaleExchanges, EXCHANGES_KEEP_MS } from '@/orders/dropStaleExchanges';
 import { parseExchangeOrders } from '@/orders/parseExchangeOrders';
+import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { buildDayReport } from '@/report/buildDayReport';
 import { formatDayReport } from '@/report/formatDayReport';
 import { ReportService } from '@/report/ReportService';
@@ -32,6 +33,12 @@ describe('parseExchangeOrders', () => {
   it('ignores the order numbers written in the same message', () => {
     expect(parseExchangeOrders('15.10, Алина, Обмены - 2 заказа\n8808297 (19689)\n8809128', '2026')).toEqual({ count: 2, date: '2026-10-15' });
     expect(parseExchangeOrders('15.10, Алина, Обмены\n8808297\n8809128', '2026')).toBeUndefined();
+  });
+
+  it('reads the exchanges written under the live stream count in one message', () => {
+    const text = '29.10, Алина, Прямой эфир - 4 заказа\n\n9074378\n9078998\n\nОбмен - 1 заказ\n9018270';
+    expect(parseExchangeOrders(text, '2026')).toEqual({ count: 1, date: '2026-10-29' });
+    expect(parseLiveOrders(text, '2026')).toEqual({ count: 4, date: '2026-10-29' });
   });
 
   it('ignores other messages', () => {

@@ -6,7 +6,7 @@ import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { resolveWorkingDate } from '@/orders/resolveWorkingDate';
 
-const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], reminders: [] };
+const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], tiktok: [], reminders: [] };
 
 describe('parseLiveOrders', () => {
   it('reads the live stream order count from the way Alina writes it', () => {

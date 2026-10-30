@@ -5,4 +5,5 @@ export type ReadyItems = {
   batches: OrderBatch[];
   liveOrders: LiveOrders[];
   exchanges: LiveOrders[];
+  tiktok: LiveOrders[];
 };

@@ -11,19 +11,28 @@ import { kyivToday } from '@/common/kyivTime';
 import { applyExchangeOrders } from '@/orders/applyExchangeOrders';
 import { applyLiveOrders } from '@/orders/applyLiveOrders';
 import { applyMessage } from '@/orders/applyMessage';
+import { applyTiktokOrders } from '@/orders/applyTiktokOrders';
 import { countListedOrders } from '@/orders/countListedOrders';
 import { dropStaleBatches } from '@/orders/dropStaleBatches';
-import { dropStaleExchanges } from '@/orders/dropStaleExchanges';
+import { dropStaleCounts } from '@/orders/dropStaleCounts';
 import { isChatter } from '@/orders/isChatter';
 import { parseExchangeOrders } from '@/orders/parseExchangeOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { parseOrderMessage } from '@/orders/parseOrderMessage';
+import { parseTiktokOrders } from '@/orders/parseTiktokOrders';
 import { resolveWorkingDate } from '@/orders/resolveWorkingDate';
 import { QUIET_PERIOD_MS, splitReadyBatches } from '@/orders/splitReadyBatches';
 import { REPORT_TEXTS } from '@/report/reportTexts';
 import { MessageLogStore } from '@/storage/MessageLogStore';
 import { StateStore } from '@/storage/StateStore';
 import { TelegramService } from '@/telegram/TelegramService';
+
+/** The counts a message of the service manager may carry (one or several in the same message): how to read them and where to keep them. */
+const COUNT_KINDS: { parse: (text: string, year: string) => ParsedLive | undefined; apply: (state: AgentState, entry: LiveOrders) => AgentState }[] = [
+  { parse: parseLiveOrders, apply: applyLiveOrders },
+  { parse: parseExchangeOrders, apply: applyExchangeOrders },
+  { parse: parseTiktokOrders, apply: applyTiktokOrders },
+];
 
 @Injectable()
 export class OrderIntakeService {
@@ -40,13 +49,15 @@ export class OrderIntakeService {
     await this.messageLog.append(messages);
     const updated = await this.applyMessages(state, messages);
     const batches = dropStaleBatches(updated.batches, now);
-    const exchanges = dropStaleExchanges(updated.exchanges, now);
-    await this.stateStore.save({ ...updated, batches, exchanges, offset: nextOffset });
+    const exchanges = dropStaleCounts(updated.exchanges, now);
+    const tiktok = dropStaleCounts(updated.tiktok, now);
+    await this.stateStore.save({ ...updated, batches, exchanges, tiktok, offset: nextOffset });
     const isQuiet = (entry: LiveOrders): boolean => now - entry.lastMessageAt >= QUIET_PERIOD_MS;
     return {
       batches: splitReadyBatches(batches, now).ready,
       liveOrders: updated.liveOrders.filter(isQuiet),
       exchanges: exchanges.filter(isQuiet),
+      tiktok: tiktok.filter(isQuiet),
     };
   }
 
@@ -73,28 +84,27 @@ export class OrderIntakeService {
   }
 
   /**
-   * A message is a live stream and/or exchange count (the exchanges may be written under the live stream count),
+   * A message is a count of the service manager (live stream, exchanges, TikTok: one or several in the same message),
    * chatter about a plan or progress (ignored), or (otherwise) a shift caption and order numbers.
    */
   private async applyOne(state: AgentState, message: TelegramMessage, year: string): Promise<AgentState> {
-    const exchange = parseExchangeOrders(message.text, year);
-    const withExchange = exchange ? this.applyExchangeMessage(state, { exchange, message }) : state;
-    const live = parseLiveOrders(message.text, year);
-    if (live) return this.applyLiveMessage(withExchange, { live, message });
-    if (exchange || isChatter(message.text)) return withExchange;
-    return this.applyOrderMessage(withExchange, { message, year });
+    const counted = this.applyCounts(state, { message, year });
+    if (counted.found) return counted.state;
+    if (isChatter(message.text)) return state;
+    return this.applyOrderMessage(state, { message, year });
   }
 
-  private applyLiveMessage(state: AgentState, request: { live: ParsedLive; message: TelegramMessage }): AgentState {
-    const { live, message } = request;
-    const date = resolveWorkingDate(live.date, message.sentAt);
-    return applyLiveOrders(state, { date, count: live.count, messageId: message.messageId, lastMessageAt: message.sentAt });
-  }
-
-  private applyExchangeMessage(state: AgentState, request: { exchange: ParsedLive; message: TelegramMessage }): AgentState {
-    const { exchange, message } = request;
-    const date = resolveWorkingDate(exchange.date, message.sentAt);
-    return applyExchangeOrders(state, { date, count: exchange.count, messageId: message.messageId, lastMessageAt: message.sentAt });
+  private applyCounts(state: AgentState, request: { message: TelegramMessage; year: string }): { state: AgentState; found: boolean } {
+    const { message, year } = request;
+    const found = COUNT_KINDS.flatMap((kind) => {
+      const parsed = kind.parse(message.text, year);
+      return parsed ? [{ kind, parsed }] : [];
+    });
+    const apply = (current: AgentState, item: (typeof found)[number]): AgentState => {
+      const date = resolveWorkingDate(item.parsed.date, message.sentAt);
+      return item.kind.apply(current, { date, count: item.parsed.count, messageId: message.messageId, lastMessageAt: message.sentAt });
+    };
+    return { state: found.reduce(apply, state), found: found.length > 0 };
   }
 
   private async applyOrderMessage(state: AgentState, request: { message: TelegramMessage; year: string }): Promise<AgentState> {

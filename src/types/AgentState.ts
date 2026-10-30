@@ -7,5 +7,7 @@ export type AgentState = {
   liveOrders: LiveOrders[];
   /** The exchange counts of the days, kept for a week so that a late message can still update its day. */
   exchanges: LiveOrders[];
+  /** The TikTok status order counts of the days, kept for a week like the exchange counts. */
+  tiktok: LiveOrders[];
   reminders: string[];
 };

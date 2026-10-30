@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 
+import type { DayReport } from '@/types/DayReport';
 import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
 import type { ReadyItems } from '@/types/ReadyItems';
@@ -37,11 +38,12 @@ export class IntakeJobs {
     }
   }
 
-  /** Shift lists first, then the live stream counts (the day reports take the exchange counts along), then the exchange updates. */
+  /** Shift lists first, then the live stream counts (the day reports take the exchange and TikTok counts along), then the exchange and TikTok updates. */
   private async processReady(ready: ReadyItems): Promise<void> {
     for (const batch of ready.batches) await this.processBatch(batch);
-    for (const entry of ready.liveOrders) await this.processLiveOrders({ entry, exchanges: ready.exchanges });
-    for (const entry of ready.exchanges) await this.processExchanges(entry);
+    for (const entry of ready.liveOrders) await this.processLiveOrders({ entry, ready });
+    for (const entry of ready.exchanges) await this.resendDay({ entry, update: (request) => this.reports.updateDayExchanges(request), what: 'exchange' });
+    for (const entry of ready.tiktok) await this.resendDay({ entry, update: (request) => this.reports.updateDayTiktok(request), what: 'TikTok' });
   }
 
   private async processBatch(batch: OrderBatch): Promise<void> {
@@ -57,11 +59,12 @@ export class IntakeJobs {
     await this.intake.completeBatch(batch);
   }
 
-  private async processLiveOrders(request: { entry: LiveOrders; exchanges: LiveOrders[] }): Promise<void> {
-    const { entry, exchanges } = request;
+  private async processLiveOrders(request: { entry: LiveOrders; ready: ReadyItems }): Promise<void> {
+    const { entry, ready } = request;
     try {
-      const exchangeCount = exchanges.find((item) => item.date === entry.date)?.count ?? 0;
-      const report = await this.reports.prepareDayReport({ entry, exchanges: exchangeCount, now: Date.now() });
+      const countOf = (items: LiveOrders[]): number => items.find((item) => item.date === entry.date)?.count ?? 0;
+      const extras = { exchanges: countOf(ready.exchanges), tiktok: countOf(ready.tiktok) };
+      const report = await this.reports.prepareDayReport({ entry, extras, now: Date.now() });
       if (!report) return;
       await this.delivery.deliverDay(report);
       this.logger.log(`Day report sent for ${entry.date}, ${entry.count} live stream orders`);
@@ -72,15 +75,16 @@ export class IntakeJobs {
     await this.intake.completeLiveOrders(entry);
   }
 
-  /** A day report that went out without the exchange count (or with another one) is sent and written again with it. */
-  private async processExchanges(entry: LiveOrders): Promise<void> {
+  /** A day report that went out without the exchange or TikTok count (or with another one) is sent and written again with it. */
+  private async resendDay(request: { entry: LiveOrders; update: (request: { date: string; count: number }) => Promise<DayReport | undefined>; what: string }): Promise<void> {
+    const { entry, update, what } = request;
     try {
-      const report = await this.reports.updateDayExchanges({ date: entry.date, count: entry.count });
+      const report = await update({ date: entry.date, count: entry.count });
       if (!report) return;
       await this.delivery.deliverDay(report);
-      this.logger.log(`Day report for ${entry.date} sent again with ${entry.count} exchange orders`);
+      this.logger.log(`Day report for ${entry.date} sent again with ${entry.count} ${what} orders`);
     } catch (error) {
-      this.logger.error(`Exchange update failed for ${entry.date}: ${describeError(error)}`);
+      this.logger.error(`Update of ${what} orders failed for ${entry.date}: ${describeError(error)}`);
     }
   }
 }

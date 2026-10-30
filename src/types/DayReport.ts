@@ -16,6 +16,8 @@ export type DayReport = {
   liveOrders: number;
   liveConversion?: number;
   serviceRequests: number;
+  /** The TikTok orders written by the service manager; they are already in the TikTok source row (with the TikTok status leads). */
+  tiktokOrders?: number;
   /** Exchange orders of the day, written by the service manager; absent in reports made before they were counted. */
   exchanges?: number;
 };

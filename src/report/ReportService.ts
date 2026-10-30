@@ -7,6 +7,7 @@ import type { ShiftReport } from '@/types/ShiftReport';
 
 import { kyivDayAfter, kyivLocalToIso } from '@/common/kyivTime';
 import { batchOrderIds } from '@/orders/batchOrderIds';
+import { addTiktokToRows } from '@/report/addTiktokToRows';
 import { buildDayReport } from '@/report/buildDayReport';
 import { buildShiftReport } from '@/report/buildShiftReport';
 import { computeDayPlan } from '@/report/computeDayPlan';
@@ -47,12 +48,12 @@ export class ReportService {
    * the plan is the sum of the two shifts' plans. Returns undefined while something is still missing;
    * after a long wait it names what is missing.
    */
-  async prepareDayReport(request: { entry: LiveOrders; exchanges: number; now: number }): Promise<DayReport | undefined> {
-    const { entry, exchanges, now } = request;
+  async prepareDayReport(request: { entry: LiveOrders; extras: { exchanges: number; tiktok: number }; now: number }): Promise<DayReport | undefined> {
+    const { entry, extras, now } = request;
     const counts = await this.snapshots.loadDay(entry.date);
     const shiftReports = await this.loadShiftReports(entry.date);
     if (counts && shiftReports.length === 2) {
-      return buildDayReport({ entry, counts, shiftReports, exchanges, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
+      return buildDayReport({ entry, counts, shiftReports, ...extras, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
     }
     if (now - entry.lastMessageAt < SNAPSHOT_WAIT_LIMIT_MS) return undefined;
     throw new Error(`Cannot build the day report for ${entry.date}: ${counts ? '' : 'no day snapshot, '}${shiftReports.length} of 2 shift reports`);
@@ -66,6 +67,17 @@ export class ReportService {
     const stored = await this.reportStore.loadDay(request.date);
     if (!stored || (stored.report.exchanges ?? 0) === request.count) return undefined;
     return { ...stored.report, exchanges: request.count };
+  }
+
+  /**
+   * The sent day report with a changed TikTok order count: the TikTok source row follows (the orders and, with them, the leads).
+   * Undefined when the day report does not exist yet or already has this count.
+   */
+  async updateDayTiktok(request: { date: string; count: number }): Promise<DayReport | undefined> {
+    const stored = await this.reportStore.loadDay(request.date);
+    if (!stored || (stored.report.tiktokOrders ?? 0) === request.count) return undefined;
+    const change = request.count - (stored.report.tiktokOrders ?? 0);
+    return { ...stored.report, rows: addTiktokToRows(stored.report.rows, { leads: change, orders: change }), tiktokOrders: request.count };
   }
 
   /**

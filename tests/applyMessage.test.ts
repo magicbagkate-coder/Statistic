@@ -6,7 +6,7 @@ import { applyMessage } from '@/orders/applyMessage';
 import { batchOrderIds } from '@/orders/batchOrderIds';
 import { QUIET_PERIOD_MS, splitReadyBatches } from '@/orders/splitReadyBatches';
 
-const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], reminders: [] };
+const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], tiktok: [], reminders: [] };
 const CAPTION = { date: '2026-10-14', shift: 1 as const, leader: 'Оля' };
 
 function meta(messageId: number, sentAt: number, edited = false): { messageId: number; sentAt: number; edited: boolean } {

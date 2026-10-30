@@ -1,20 +1,16 @@
 import type { ParsedLive } from '@/types/ParsedLive';
 
-import { DATE_PATTERN, readDate } from '@/orders/readDate';
+import { readDate } from '@/orders/readDate';
 
-const EXCHANGE_PATTERN = /обмен/i;
-/** The count is a short standalone number; order numbers (4+ digits, also in brackets) are not counts. */
-const COUNT_PATTERN = /(?<!\d)(\d{1,3})(?!\d)/;
+/** The count is a short number written right after the word, so the order numbers that follow are not counts. */
+const EXCHANGE_COUNT = /обмен[а-яё]*[^\d\n]{0,15}(?<!\d)(\d{1,3})(?!\d)/i;
 
 /**
  * Reads a message like "15.10, Алина, Обмены - 2 заказа": the number of exchange orders of the day.
- * The line may also follow the live stream count in the same message; the count is read from the exchange line on.
- * The order numbers that may follow in the same message are ignored.
+ * The line may also stand under the live stream count in the same message; the order numbers after it are ignored.
  */
 export function parseExchangeOrders(text: string, fallbackYear: string): ParsedLive | undefined {
-  const start = text.search(EXCHANGE_PATTERN);
-  if (start < 0) return undefined;
-  const count = COUNT_PATTERN.exec(text.slice(start).replace(DATE_PATTERN, ' '));
+  const count = EXCHANGE_COUNT.exec(text);
   if (!count) return undefined;
   return { count: Number(count[1]), date: readDate(text, fallbackYear) };
 }

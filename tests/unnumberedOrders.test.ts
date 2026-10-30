@@ -9,7 +9,7 @@ import { findUnnumberedSource } from '@/orders/findUnnumberedSource';
 import { QUIET_PERIOD_MS, splitReadyBatches } from '@/orders/splitReadyBatches';
 import { buildShiftReport } from '@/report/buildShiftReport';
 
-const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], reminders: [] };
+const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], tiktok: [], reminders: [] };
 const CAPTION = { date: '2026-10-23', shift: 1 as const, leader: 'Наташа' };
 const LEADS: LeadCounts = { leads: 100, target: 40, facebook: 0, newBot: 0, bySource: [{ source: 'Инста 1', leads: 60, target: 25 }] };
 

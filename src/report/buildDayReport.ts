@@ -4,6 +4,7 @@ import type { LiveOrders } from '@/types/LiveOrders';
 import type { PlanValues } from '@/types/PlanValues';
 import type { ShiftReport } from '@/types/ShiftReport';
 
+import { addTiktokToRows } from '@/report/addTiktokToRows';
 import { buildSourceRows } from '@/report/buildSourceRows';
 import { conversionPercent } from '@/report/conversionPercent';
 
@@ -18,12 +19,16 @@ function sumOrdersBySource(shiftReports: ShiftReport[]): Map<string, number> {
  * plus the service manager's live stream block: live stream leads = chats still in the live stream status at the end
  * of the day + live stream orders, conversion = live stream orders / live stream leads,
  * service requests = returns + service requests; exchanges is the exchange count the service manager wrote for the day.
+ * The TikTok status is counted like the live stream, in the TikTok source row of the day: leads (all of them target) =
+ * chats still in the status + its orders, orders = the TikTok orders written by the service manager.
  */
-export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[]; plan?: PlanValues; exchanges?: number }): DayReport {
-  const { entry, counts, shiftReports, plan, exchanges } = input;
+export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; shiftReports: ShiftReport[]; plan?: PlanValues; exchanges?: number; tiktok?: number }): DayReport {
+  const { entry, counts, shiftReports, plan, exchanges, tiktok = 0 } = input;
   const { day, service } = counts;
   const orders = shiftReports.reduce((sum, report) => sum + report.orders, 0);
   const liveLeads = service.liveStream + entry.count;
+  const tiktokLeads = (service.tiktok ?? 0) + tiktok;
+  const rows = addTiktokToRows(buildSourceRows(day, sumOrdersBySource(shiftReports)), { leads: tiktokLeads, orders: tiktok });
   return {
     date: entry.date,
     leads: day.leads,
@@ -34,11 +39,12 @@ export function buildDayReport(input: { entry: LiveOrders; counts: DayCounts; sh
     orders,
     conversion: conversionPercent(orders, day.target),
     plan,
-    rows: buildSourceRows(day, sumOrdersBySource(shiftReports)),
+    rows,
     liveLeads,
     liveOrders: entry.count,
     liveConversion: conversionPercent(entry.count, liveLeads),
     serviceRequests: service.returns + service.serviceRequests,
     exchanges,
+    tiktokOrders: tiktok,
   };
 }

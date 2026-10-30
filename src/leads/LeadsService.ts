@@ -16,6 +16,7 @@ import {
   SERVICE_MANAGER_NAME,
   SERVICE_REQUEST_STATUS,
   TARGET_STATUSES,
+  TIKTOK_STATUS,
 } from '@/leads/leadStatuses';
 
 @Injectable()
@@ -35,7 +36,7 @@ export class LeadsService {
     };
   }
 
-  /** Counts the separate whole-day statuses of the service manager. */
+  /** Counts the separate whole-day statuses: those of the service manager and the TikTok status of any manager. */
   countServiceLeads(chats: Chat[]): ServiceCounts {
     const own = chats.filter((chat) => chat.assignedManagerName === SERVICE_MANAGER_NAME);
     const countStatus = (status: string): number => own.filter((chat) => chat.status === status).length;
@@ -43,6 +44,7 @@ export class LeadsService {
       liveStream: countStatus(LIVE_STREAM_STATUS),
       returns: countStatus(RETURNS_STATUS),
       serviceRequests: countStatus(SERVICE_REQUEST_STATUS),
+      tiktok: chats.filter((chat) => chat.status === TIKTOK_STATUS).length,
     };
   }
 

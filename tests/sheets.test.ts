@@ -25,10 +25,10 @@ describe('sheetDateSerial', () => {
 });
 
 describe('dayTableTotals', () => {
-  it('adds the live stream and exchange orders to the shifts orders and keeps the leads as they are', () => {
-    const report = { date: '2026-10-18', leads: 300, target: 120, orders: 29, liveOrders: 4, exchanges: 2 } as DayReport;
-    expect(dayTableTotals(report)).toEqual({ leads: 300, target: 120, orders: 35 });
-    expect(dayTableTotals({ ...report, exchanges: undefined })).toEqual({ leads: 300, target: 120, orders: 33 });
+  it('adds the live stream, TikTok and exchange orders to the shifts orders and keeps the leads as they are', () => {
+    const report = { date: '2026-10-18', leads: 300, target: 120, orders: 29, liveOrders: 4, tiktokOrders: 3, exchanges: 2 } as DayReport;
+    expect(dayTableTotals(report)).toEqual({ leads: 300, target: 120, orders: 38 });
+    expect(dayTableTotals({ ...report, exchanges: undefined, tiktokOrders: undefined })).toEqual({ leads: 300, target: 120, orders: 33 });
   });
 });
 

@@ -28,7 +28,7 @@ function printCounts(label: string, counts: LeadCounts): void {
 }
 
 function printService(counts: ServiceCounts): void {
-  stdout.write(`service manager: live stream ${counts.liveStream} | returns ${counts.returns} | service requests ${counts.serviceRequests}\n`);
+  stdout.write(`service manager: live stream ${counts.liveStream} | returns ${counts.returns} | service requests ${counts.serviceRequests} | tiktok ${counts.tiktok ?? 0}\n`);
 }
 
 async function printDayReport(app: INestApplicationContext, request: { date: string; save: boolean }): Promise<void> {

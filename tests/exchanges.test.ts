@@ -9,14 +9,14 @@ import type { DayReport } from '@/types/DayReport';
 import type { ShiftReport } from '@/types/ShiftReport';
 
 import { applyExchangeOrders } from '@/orders/applyExchangeOrders';
-import { dropStaleExchanges, EXCHANGES_KEEP_MS } from '@/orders/dropStaleExchanges';
+import { COUNTS_KEEP_MS, dropStaleCounts } from '@/orders/dropStaleCounts';
 import { parseExchangeOrders } from '@/orders/parseExchangeOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
 import { buildDayReport } from '@/report/buildDayReport';
 import { formatDayReport } from '@/report/formatDayReport';
 import { ReportService } from '@/report/ReportService';
 
-const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], reminders: [] };
+const EMPTY: AgentState = { offset: 0, batches: [], liveOrders: [], exchanges: [], tiktok: [], reminders: [] };
 const COUNTS: DayCounts = { day: { leads: 100, target: 50, facebook: 0, newBot: 0, bySource: [] }, service: { liveStream: 4, returns: 1, serviceRequests: 1 } };
 
 function shift(orders: number): ShiftReport {
@@ -57,8 +57,8 @@ describe('applyExchangeOrders', () => {
 
   it('forgets a count after a week', () => {
     const entry = { date: '2026-10-15', count: 2, messageId: 1, lastMessageAt: 0 };
-    expect(dropStaleExchanges([entry], EXCHANGES_KEEP_MS - 1)).toEqual([entry]);
-    expect(dropStaleExchanges([entry], EXCHANGES_KEEP_MS)).toEqual([]);
+    expect(dropStaleCounts([entry], COUNTS_KEEP_MS - 1)).toEqual([entry]);
+    expect(dropStaleCounts([entry], COUNTS_KEEP_MS)).toEqual([]);
   });
 });
 
@@ -66,10 +66,10 @@ describe('the day report with exchanges', () => {
   const entry = { date: '2026-10-18', count: 5, messageId: 1, lastMessageAt: 0 };
   const report = buildDayReport({ entry, counts: COUNTS, shiftReports: [shift(20), shift(15)], exchanges: 3 });
 
-  it('keeps the orders of the shifts and writes the exchanges on their own line below the live streams', () => {
+  it('keeps the orders of the shifts and writes the exchanges on their own line below the live streams and TikTok', () => {
     expect(report).toMatchObject({ orders: 35, exchanges: 3 });
     const lines = formatDayReport(report).split('\n');
-    expect(lines[lines.findIndex((line) => line.startsWith('Прямые эфиры')) + 1]).toBe('Обмены: 3');
+    expect(lines.find((line) => line.startsWith('Обмены'))).toBe('Обмены: 3');
   });
 
   it('has no exchanges line for reports made before they were counted', () => {

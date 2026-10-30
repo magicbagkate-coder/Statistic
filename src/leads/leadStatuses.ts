@@ -5,6 +5,8 @@ export const AWAITING_PAYMENT_STATUS = 'Очікуємо оплату або д�
 export const LIVE_STREAM_STATUS = 'Прямий ефір';
 export const RETURNS_STATUS = 'Повернення';
 export const SERVICE_REQUEST_STATUS = 'Сервісне звернення';
+/** Counted for the whole day on its own, like the live stream: it is not a shift lead status. */
+export const TIKTOK_STATUS = 'Тикток';
 
 export const SERVICE_MANAGER_NAME = 'Аліна Хоніч';
 

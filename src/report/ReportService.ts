@@ -82,7 +82,7 @@ export class ReportService {
 
   /**
    * The whole-day numbers for the table, which does not wait for the service manager: ready as soon as the day snapshot
-   * and both shift reports exist, with zero live stream orders. Undefined once the day report has been sent: it wrote
+   * and both shift reports exist, with zero live stream, TikTok and exchange orders (nothing written means none). Undefined once the day report has been sent: it wrote
    * the row with the real live stream orders, and this version must not overwrite it.
    */
   async prepareDayTableReport(date: string): Promise<DayReport | undefined> {
@@ -91,7 +91,7 @@ export class ReportService {
     const shiftReports = await this.loadShiftReports(date);
     if (!counts || shiftReports.length < 2) return undefined;
     const entry = { date, count: 0, messageId: 0, lastMessageAt: 0 };
-    return buildDayReport({ entry, counts, shiftReports, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
+    return buildDayReport({ entry, counts, shiftReports, exchanges: 0, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
   }
 
   /**

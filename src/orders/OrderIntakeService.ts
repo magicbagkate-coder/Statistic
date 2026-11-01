@@ -15,6 +15,7 @@ import { applyTiktokOrders } from '@/orders/applyTiktokOrders';
 import { countListedOrders } from '@/orders/countListedOrders';
 import { dropStaleBatches } from '@/orders/dropStaleBatches';
 import { dropStaleCounts } from '@/orders/dropStaleCounts';
+import { forgetMessageCounts } from '@/orders/forgetMessageCounts';
 import { isChatter } from '@/orders/isChatter';
 import { parseExchangeOrders } from '@/orders/parseExchangeOrders';
 import { parseLiveOrders } from '@/orders/parseLiveOrders';
@@ -104,7 +105,7 @@ export class OrderIntakeService {
       const date = resolveWorkingDate(item.parsed.date, message.sentAt);
       return item.kind.apply(current, { date, count: item.parsed.count, messageId: message.messageId, lastMessageAt: message.sentAt });
     };
-    return { state: found.reduce(apply, state), found: found.length > 0 };
+    return { state: found.reduce(apply, forgetMessageCounts(state, message.messageId)), found: found.length > 0 };
   }
 
   private async applyOrderMessage(state: AgentState, request: { message: TelegramMessage; year: string }): Promise<AgentState> {

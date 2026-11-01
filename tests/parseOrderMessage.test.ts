@@ -49,3 +49,52 @@ describe('parseOrderMessage', () => {
     expect(parseOrderMessage('19689', '2026').orderIds).toEqual([]);
   });
 });
+
+describe('parseOrderMessage: a line with just a source', () => {
+  const text = '01.11\nсмена 1\nОля\n\n9128833\n9135200\nінстаграм 1\nінстаграм 1';
+
+  it('counts it as an order without a number, with the Ukrainian spelling too, and keeps it out of the caption', () => {
+    const parsed = parseOrderMessage(text, '2026');
+    expect(parsed.caption).toEqual({ date: '2026-11-01', shift: 1, leader: 'Оля' });
+    expect(parsed.orderIds).toEqual([9128833, 9135200]);
+    expect(parsed.unnumbered).toEqual(['Инста 1', 'Инста 1']);
+  });
+
+  it('reads other ways to write a source', () => {
+    const parsed = parseOrderMessage('Фб 2\nVIBER\nТік ток\nінстаграм', '2026');
+    expect(parsed.unnumbered).toEqual(['ФБ 2', 'Вайбер', 'Тикток', 'Без источника']);
+  });
+
+  it('does not take a numbered order, a caption or a sentence for a source line', () => {
+    const parsed = parseOrderMessage('9074378 Тикток\n01.11 инстаграм\nнужно проверить заказ из инстаграм и написать клиенту', '2026');
+    expect(parsed.unnumbered).toEqual([]);
+  });
+});
+
+describe('parseOrderMessage: other ways to say an order has no number yet', () => {
+  const phrases = [
+    'номера заказа нет (инста 1)',
+    'Номера нет, инстаграм 1',
+    'без номера - інстаграм 1',
+    'заказ без номера (первый аккаунт инстаграм)',
+    'номер отсутствует, инста 1',
+    'немає номера заказу (інстаграм 1)',
+    'Нет номера заказа - Инстаграм 1',
+    'пока нет номера: инста 1',
+  ];
+
+  it('reads each of them as an order of the named source', () => {
+    for (const phrase of phrases) expect(parseOrderMessage(phrase, '2026').unnumbered, phrase).toEqual(['Инста 1']);
+  });
+
+  it('counts the phrase without a source as an order of an unknown source', () => {
+    expect(parseOrderMessage('номера заказа нет', '2026').unnumbered).toEqual(['Без источника']);
+  });
+
+  it('keeps the phrase out of the caption and does not take a numbered order for it', () => {
+    const parsed = parseOrderMessage('01.11\nсмена 1\nОля\n9128833\nномера заказа нет (инста 1)', '2026');
+    expect(parsed.caption).toEqual({ date: '2026-11-01', shift: 1, leader: 'Оля' });
+    expect(parsed.unnumbered).toEqual(['Инста 1']);
+    expect(parseOrderMessage('9128833 без номера', '2026').unnumbered).toEqual([]);
+  });
+});

@@ -1,7 +1,7 @@
 import type { PlanValues } from '@/types/PlanValues';
 
 /** The planned conversion, in percent of target leads. Change it here when the plan changes. */
-export const PLAN_CONVERSION_PERCENT = 22;
+export const PLAN_CONVERSION_PERCENT = 20;
 
 const PERCENT = 100;
 

@@ -53,7 +53,7 @@ describe('prepareDefaultDayReport', () => {
 
   it('builds the day report with zero live stream orders after the deadline, with the plan', async () => {
     const report = await build({ existsDay: false }).prepareDefaultDayReport({ date: '2026-10-18', now: AFTER_DEADLINE });
-    expect(report).toMatchObject({ orders: 35, liveOrders: 0, liveLeads: 4, liveConversion: 0, plan: { orders: 11, conversion: 22 } });
+    expect(report).toMatchObject({ orders: 35, liveOrders: 0, liveLeads: 4, liveConversion: 0, plan: { orders: 10, conversion: 20 } });
   });
 
   it('does nothing when the day report has already been sent', async () => {

@@ -11,15 +11,15 @@ import { formatPlanLines } from '@/report/formatPlanLines';
 import { pluralOrders } from '@/report/pluralOrders';
 
 describe('computePlan', () => {
-  it('plans 22% conversion and orders = target leads × 22 ÷ 100', () => {
-    expect(PLAN_CONVERSION_PERCENT).toBe(22);
-    expect(computePlan(200)).toEqual({ orders: 44, conversion: 22 });
-    expect(computePlan(160)).toEqual({ orders: 35, conversion: 22 });
+  it('plans 20% conversion and orders = target leads × 20 ÷ 100', () => {
+    expect(PLAN_CONVERSION_PERCENT).toBe(20);
+    expect(computePlan(200)).toEqual({ orders: 40, conversion: 20 });
+    expect(computePlan(160)).toEqual({ orders: 32, conversion: 20 });
   });
 
   it('rounds to a whole number of orders and has an empty plan without target leads', () => {
-    expect(computePlan(133)).toEqual({ orders: 29, conversion: 22 });
-    expect(computePlan(0)).toEqual({ orders: 0, conversion: 22 });
+    expect(computePlan(133)).toEqual({ orders: 27, conversion: 20 });
+    expect(computePlan(0)).toEqual({ orders: 0, conversion: 20 });
   });
 });
 

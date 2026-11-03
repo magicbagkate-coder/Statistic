@@ -20,7 +20,9 @@ const REPORT: DayReport = {
   serviceRequests: 0,
 };
 
-type Setup = { jobs: DayRowJobs; tableRows: DayReport[]; dayReports: DayReport[]; remembered: Set<string> };
+const WRITTEN = { exchanges: 1, tiktok: 3 };
+
+type Setup = { jobs: DayRowJobs; reports: ReportService; tableRows: DayReport[]; dayReports: DayReport[]; remembered: Set<string> };
 
 function build(request: { table: DayReport | undefined; fallback: DayReport | undefined }): Setup {
   const tableRows: DayReport[] = [];
@@ -37,8 +39,9 @@ function build(request: { table: DayReport | undefined; fallback: DayReport | un
   const store = {
     has: vi.fn((date: string) => Promise.resolve(remembered.has(date))),
     add: vi.fn((date: string) => Promise.resolve(remembered.add(date))),
+    writtenCounts: vi.fn(() => Promise.resolve(WRITTEN)),
   } as unknown as DayRowStore;
-  return { jobs: new DayRowJobs(reports, delivery, store), tableRows, dayReports, remembered };
+  return { jobs: new DayRowJobs(reports, delivery, store), reports, tableRows, dayReports, remembered };
 }
 
 describe('DayRowJobs', () => {
@@ -61,5 +64,14 @@ describe('DayRowJobs', () => {
     const { jobs, dayReports } = build({ table: REPORT, fallback: REPORT });
     await jobs.writePendingDayRows();
     expect(dayReports.length).toBeGreaterThan(0);
+  });
+});
+
+describe('DayRowJobs with exchange and TikTok orders already written', () => {
+  it('builds the table row and the default day report with them, so no second report is needed', async () => {
+    const { jobs, reports } = build({ table: REPORT, fallback: REPORT });
+    await jobs.writePendingDayRows();
+    expect(reports.prepareDayTableReport).toHaveBeenCalledWith(expect.any(String), WRITTEN);
+    expect(reports.prepareDefaultDayReport).toHaveBeenCalledWith(expect.objectContaining({ written: WRITTEN }));
   });
 });

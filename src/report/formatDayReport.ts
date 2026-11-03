@@ -1,5 +1,7 @@
 import type { DayReport } from '@/types/DayReport';
 
+import { conversionPercent } from '@/report/conversionPercent';
+import { dayTotalOrders } from '@/report/dayTotalOrders';
 import { formatAwaitingPayment } from '@/report/formatAwaitingPayment';
 import { formatExchanges } from '@/report/formatExchanges';
 import { formatPercent } from '@/report/formatPercent';
@@ -8,15 +10,17 @@ import { formatDate } from '@/report/formatReport';
 import { formatSourceRow } from '@/report/formatSourceRow';
 import { REPORT_TEXTS } from '@/report/reportTexts';
 
-/** Builds the Telegram text of the whole-day report. */
+/** Builds the Telegram text of the whole-day report; its orders are all the orders of the day, like the table's total. */
 export function formatDayReport(report: DayReport): string {
+  const orders = dayTotalOrders(report);
+  const conversion = conversionPercent(orders, report.target);
   return [
     `${REPORT_TEXTS.dayTitle} · ${formatDate(report.date)}`,
     `${REPORT_TEXTS.leads}: ${report.leads} · ${REPORT_TEXTS.target}: ${report.target}`,
     `${REPORT_TEXTS.facebook}: ${report.facebook} · ${REPORT_TEXTS.newBot}: ${report.newBot}`,
     ...formatAwaitingPayment(report.awaitingPayment),
-    `${REPORT_TEXTS.orders}: ${report.orders} · ${REPORT_TEXTS.conversion}: ${formatPercent(report.conversion)}`,
-    ...formatPlanLines({ plan: report.plan, orders: report.orders, conversion: report.conversion }),
+    `${REPORT_TEXTS.orders}: ${orders} · ${REPORT_TEXTS.conversion}: ${formatPercent(conversion)}`,
+    ...formatPlanLines({ plan: report.plan, orders, conversion }),
     '',
     REPORT_TEXTS.bySource,
     ...report.rows.map(formatSourceRow),

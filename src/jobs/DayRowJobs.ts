@@ -39,7 +39,8 @@ export class DayRowJobs {
 
   private async writeDayRow(date: string): Promise<void> {
     await this.writeTableRow(date);
-    const fallback = await this.reports.prepareDefaultDayReport({ date, now: Date.now() });
+    const written = await this.dayRows.writtenCounts(date);
+    const fallback = await this.reports.prepareDefaultDayReport({ date, now: Date.now(), written });
     if (!fallback) return;
     await this.delivery.deliverDay(fallback);
     this.logger.log(`Day report sent for ${date} without a live stream count: zero live stream orders`);
@@ -47,7 +48,7 @@ export class DayRowJobs {
 
   private async writeTableRow(date: string): Promise<void> {
     if (await this.dayRows.has(date)) return;
-    const report = await this.reports.prepareDayTableReport(date);
+    const report = await this.reports.prepareDayTableReport(date, await this.dayRows.writtenCounts(date));
     if (!report) return;
     await this.dayRows.add(date);
     await this.delivery.writeDayRow(report);

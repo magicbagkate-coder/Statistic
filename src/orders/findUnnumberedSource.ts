@@ -1,3 +1,4 @@
+import { correctSourceWords } from '@/orders/correctSourceWords';
 import { DATE_PATTERN } from '@/orders/readDate';
 
 /** The source name for an order that has no number yet and names no (or an unclear) source. */
@@ -28,9 +29,9 @@ function findAccountSource(text: string): string | undefined {
   return isFirst ? rule.first : rule.second;
 }
 
-/** Lower case, with the Ukrainian "і" written as the Russian "и", so "інстаграм" and "инстаграм" are the same word. */
+/** Lower case, with the Ukrainian "і" written as the Russian "и" and the typos in the source names fixed, so "інстаграм" and "инстаграм" are the same word. */
 function normalizeSource(text: string): string {
-  return text.toLowerCase().replace(/і/g, 'и');
+  return correctSourceWords(text.toLowerCase().replace(/і/g, 'и'));
 }
 
 /**

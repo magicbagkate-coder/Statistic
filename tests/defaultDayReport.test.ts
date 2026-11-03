@@ -39,6 +39,13 @@ describe('prepareDayTableReport', () => {
   });
 });
 
+describe('prepareDefaultDayReport with the exchange and TikTok orders written', () => {
+  it('has them in the report sent at the deadline', async () => {
+    const report = await build({ existsDay: false }).prepareDefaultDayReport({ date: '2026-10-18', now: AFTER_DEADLINE, written: { exchanges: 2, tiktok: 1 } });
+    expect(report).toMatchObject({ exchanges: 2, tiktokOrders: 1, orders: 35, liveOrders: 0 });
+  });
+});
+
 describe('prepareDefaultDayReport', () => {
   it('waits for the live stream message until 02:00 Kyiv time of the next day', async () => {
     expect(await build({ existsDay: false }).prepareDefaultDayReport({ date: '2026-10-18', now: BEFORE_DEADLINE })).toBeUndefined();

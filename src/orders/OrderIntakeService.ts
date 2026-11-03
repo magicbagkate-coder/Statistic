@@ -54,9 +54,11 @@ export class OrderIntakeService {
     const tiktok = dropStaleCounts(updated.tiktok, now);
     await this.stateStore.save({ ...updated, batches, exchanges, tiktok, offset: nextOffset });
     const isQuiet = (entry: LiveOrders): boolean => now - entry.lastMessageAt >= QUIET_PERIOD_MS;
+    const dayCounts = [...updated.liveOrders, ...exchanges, ...tiktok];
+    const isSettled = (entry: LiveOrders): boolean => dayCounts.filter((item) => item.date === entry.date).every(isQuiet);
     return {
       batches: splitReadyBatches(batches, now).ready,
-      liveOrders: updated.liveOrders.filter(isQuiet),
+      liveOrders: updated.liveOrders.filter(isSettled),
       exchanges: exchanges.filter(isQuiet),
       tiktok: tiktok.filter(isQuiet),
     };

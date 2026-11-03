@@ -4,6 +4,7 @@ import type { DayReport } from '@/types/DayReport';
 import type { LiveOrders } from '@/types/LiveOrders';
 import type { OrderBatch } from '@/types/OrderBatch';
 import type { ShiftReport } from '@/types/ShiftReport';
+import type { WrittenCounts } from '@/types/WrittenCounts';
 
 import { kyivDayAfter, kyivLocalToIso } from '@/common/kyivTime';
 import { batchOrderIds } from '@/orders/batchOrderIds';
@@ -21,6 +22,8 @@ export const DAY_REPORT_DEADLINE = '02:00:00';
 
 /** How long a finished message may wait for what its report needs before the report is given up. */
 export const SNAPSHOT_WAIT_LIMIT_MS = 3 * 60 * 60 * 1000;
+
+const NOTHING_WRITTEN: WrittenCounts = { exchanges: 0, tiktok: 0 };
 
 @Injectable()
 export class ReportService {
@@ -82,27 +85,27 @@ export class ReportService {
 
   /**
    * The whole-day numbers for the table, which does not wait for the service manager: ready as soon as the day snapshot
-   * and both shift reports exist, with zero live stream, TikTok and exchange orders (nothing written means none). Undefined once the day report has been sent: it wrote
+   * and both shift reports exist, with zero live stream orders and the TikTok and exchange orders written so far (nothing written means none). Undefined once the day report has been sent: it wrote
    * the row with the real live stream orders, and this version must not overwrite it.
    */
-  async prepareDayTableReport(date: string): Promise<DayReport | undefined> {
+  async prepareDayTableReport(date: string, written: WrittenCounts = NOTHING_WRITTEN): Promise<DayReport | undefined> {
     if (await this.reportStore.existsDay(date)) return undefined;
     const counts = await this.snapshots.loadDay(date);
     const shiftReports = await this.loadShiftReports(date);
     if (!counts || shiftReports.length < 2) return undefined;
     const entry = { date, count: 0, messageId: 0, lastMessageAt: 0 };
-    return buildDayReport({ entry, counts, shiftReports, exchanges: 0, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
+    return buildDayReport({ entry, counts, shiftReports, ...written, plan: computeDayPlan({ shiftReports, target: counts.day.target }) });
   }
 
   /**
    * The day report with zero live stream orders, for when the service manager wrote nothing by the deadline.
    * Undefined before the deadline, when the report was already sent, or while its numbers are not ready.
    */
-  async prepareDefaultDayReport(request: { date: string; now: number }): Promise<DayReport | undefined> {
-    const { date, now } = request;
+  async prepareDefaultDayReport(request: { date: string; now: number; written?: WrittenCounts }): Promise<DayReport | undefined> {
+    const { date, now, written } = request;
     const deadline = Date.parse(kyivLocalToIso(kyivDayAfter(date), DAY_REPORT_DEADLINE));
     if (now < deadline || (await this.reportStore.existsDay(date))) return undefined;
-    return this.prepareDayTableReport(date);
+    return this.prepareDayTableReport(date, written);
   }
 
   private async loadShiftReports(date: string): Promise<ShiftReport[]> {

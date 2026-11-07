@@ -57,10 +57,10 @@ describe('buildDayReport', () => {
     expect(report.conversion).toBeCloseTo((35 / 200) * 100);
   });
 
-  it('adds up orders per source, keeps sources that only have orders, and has no conversion without target leads', () => {
+  it('adds up orders per source, keeps sources that only have orders, and has no conversion for orders without target leads', () => {
     expect(report.rows.find((row) => row.source === 'Инста 1')).toMatchObject({ leads: 400, target: 120, orders: 26 });
     expect(report.rows.find((row) => row.source === 'Телеграмм')).toMatchObject({ leads: 0, target: 0, orders: 6, conversion: undefined });
-    expect(report.rows.find((row) => row.source === 'Тикток')?.conversion).toBeUndefined();
+    expect(report.rows.find((row) => row.source === 'Тикток')).toMatchObject({ leads: 4, target: 0, orders: 0, conversion: 0 });
   });
 
   it('adds live stream orders to the chats left in the live stream status to get the live stream leads', () => {
@@ -99,5 +99,14 @@ describe('formatDayReport', () => {
   it('counts the orders of the day as the shifts plus the live stream, TikTok and exchange orders, like the table', () => {
     const report = buildDayReport({ entry: ENTRY, counts: COUNTS, shiftReports: SHIFTS, exchanges: 2, tiktok: 3 });
     expect(formatDayReport(report)).toContain('Заказы: 46 · конверсия: 23,0%');
+  });
+});
+
+describe('buildSourceRows: a day with nothing from some sources', () => {
+  it('still lists every known source, with zeros, after the sources that have leads', () => {
+    const day = { leads: 10, target: 4, facebook: 0, newBot: 0, bySource: [{ source: 'Инста 1', leads: 10, target: 4 }] };
+    const rows = buildDayReport({ entry: ENTRY, counts: { ...COUNTS, day }, shiftReports: [] }).rows;
+    expect(rows.map((row) => row.source)).toEqual(['Инста 1', 'Инста 2', 'ФБ 1', 'ФБ 2', 'Телеграмм', 'Тикток', 'Телеграм (Tiktok)', 'Вайбер']);
+    expect(rows.find((row) => row.source === 'Тикток')).toEqual({ source: 'Тикток', leads: 0, target: 0, orders: 0, conversion: 0 });
   });
 });

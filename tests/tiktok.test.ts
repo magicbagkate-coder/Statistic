@@ -106,7 +106,7 @@ describe('the day report with the TikTok status', () => {
     const quiet = buildDayReport({ entry, counts: COUNTS, shiftReports: [shift(20), shift(15)] });
     expect(tiktokRow(quiet)).toMatchObject({ leads: 6, target: 6, orders: 0, conversion: 0 });
     const old: DayCounts = { ...COUNTS, service: { liveStream: 4, returns: 1, serviceRequests: 1 } };
-    expect(tiktokRow(buildDayReport({ entry, counts: old, shiftReports: [shift(20), shift(15)] }))).toBeUndefined();
+    expect(tiktokRow(buildDayReport({ entry, counts: old, shiftReports: [shift(20), shift(15)] }))).toMatchObject({ leads: 0, target: 0, orders: 0, conversion: 0 });
   });
 });
 

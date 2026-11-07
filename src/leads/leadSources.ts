@@ -14,6 +14,9 @@ const SOURCE_LABELS: ReadonlyMap<string, string> = new Map([
   ['380981756903', 'Вайбер'],
 ]);
 
+/** The sources every report lists, even when there is nothing from them that day (then with zeros), in the order of this list. */
+export const REPORT_SOURCES: readonly string[] = [...SOURCE_LABELS.values()];
+
 export function findSourceLabel(chat: Chat): string {
   return SOURCE_LABELS.get(chat.ownerId ?? '') ?? UNKNOWN_SOURCE;
 }

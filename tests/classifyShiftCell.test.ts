@@ -42,7 +42,7 @@ describe('ScheduleService.findShiftManagers', () => {
   const schedule = new ScheduleService({ config: { scheduleSpreadsheetId: 'id' } } as unknown as AppConfigService);
 
   it('counts a manager who works the whole day in both shifts, and keeps the service manager out of them', async () => {
-    expect(await schedule.findShiftManagers({ date: '2026-11-07', shift: 1 })).toEqual(['Эля Григорян']);
-    expect(await schedule.findShiftManagers({ date: '2026-11-07', shift: 2 })).toEqual(['Эля Григорян', 'Ганна Кірієнко']);
+    expect(await schedule.findShiftManagers({ date: '2026-11-07', shift: 1 })).toEqual({ names: ['Эля Григорян'], problems: [] });
+    expect(await schedule.findShiftManagers({ date: '2026-11-07', shift: 2 })).toEqual({ names: ['Эля Григорян', 'Ганна Кірієнко'], problems: [] });
   });
 });

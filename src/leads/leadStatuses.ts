@@ -10,6 +10,9 @@ export const TIKTOK_STATUS = 'Тикток';
 
 export const SERVICE_MANAGER_NAME = 'Аліна Хоніч';
 
+/** Accounts that never work a shift (the administrator's test account and the shared shop account). */
+export const IGNORED_MANAGER_NAMES: readonly string[] = ['Magicbag', 'Катерина Малюк'];
+
 export const TARGET_STATUSES: ReadonlySet<string> = new Set([
   'Новий',
   'Вибір товару',

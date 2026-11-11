@@ -37,13 +37,23 @@ export class SnapshotJobs {
 
   private async takeShiftSnapshot(request: { date: string; shift: ShiftNumber }): Promise<void> {
     try {
-      await this.shiftSnapshots.collectShift({ ...request, save: true });
+      const counts = await this.shiftSnapshots.collectShift({ ...request, save: true });
       this.logger.log(`Lead snapshot saved for ${request.date}, shift ${request.shift}`);
+      await this.warnAboutProblems({ ...request, problems: counts.problems ?? [] });
     } catch (error) {
       this.logger.error(`Lead snapshot failed for ${request.date}, shift ${request.shift}: ${describeError(error)}`);
       const title = `${REPORT_TEXTS.snapshotFailure} ${request.shift} · ${formatDate(request.date)}`;
       await this.telegram.sendToReportChat(`${title}\n${REPORT_TEXTS.reason}: ${describeError(error)}`);
     }
+  }
+
+  /** A shift counted by the managers who actually had chats is saved, but the reports group is told what to fix. */
+  private async warnAboutProblems(request: { date: string; shift: ShiftNumber; problems: string[] }): Promise<void> {
+    const { date, shift, problems } = request;
+    if (problems.length === 0) return;
+    this.logger.warn(`Shift ${shift} of ${date} counted without the schedule: ${problems.join('; ')}`);
+    const title = `${REPORT_TEXTS.managersFallback} ${shift} · ${formatDate(date)}`;
+    await this.telegram.sendToReportChat(`${title}\n${problems.join('\n')}\n${REPORT_TEXTS.managersFallbackHint}`);
   }
 
   private async takeDaySnapshot(date: string): Promise<void> {

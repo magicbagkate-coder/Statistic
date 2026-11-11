@@ -9,6 +9,7 @@ import { findSourceLabel } from '@/leads/leadSources';
 import {
   AWAITING_PAYMENT_STATUS,
   FACEBOOK_STATUS,
+  IGNORED_MANAGER_NAMES,
   LEAD_STATUSES,
   LIVE_STREAM_STATUS,
   NEW_BOT_STATUS,
@@ -34,6 +35,12 @@ export class LeadsService {
       awaitingPayment: leads.filter((chat) => chat.status === AWAITING_PAYMENT_STATUS).length,
       bySource: this.groupBySource(leads, target),
     };
+  }
+
+  /** The managers who actually have chats in the list, except the service manager and the accounts that never work a shift. */
+  findResponders(chats: Chat[]): string[] {
+    const names = chats.flatMap((chat) => (chat.assignedManagerName ? [chat.assignedManagerName] : []));
+    return [...new Set(names)].filter((name) => name !== SERVICE_MANAGER_NAME && !IGNORED_MANAGER_NAMES.includes(name));
   }
 
   /** Counts the separate whole-day statuses: those of the service manager and the TikTok status of any manager. */
